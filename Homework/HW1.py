@@ -184,7 +184,6 @@ def main():
             pipe_decision_tree.score(X_test, y_test)
         )
     )
-    return
 
 
 if __name__ == "__main__":
