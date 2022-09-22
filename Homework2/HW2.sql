@@ -1,17 +1,18 @@
--- create a table batter_info: batter_id, atbat, hit, game_id, date
+-- create a table batter_info only keep useful fields: batter_id, atbat, hit, game_id, date
 DROP TABLE IF EXISTS BATTER_INFO;
 
 CREATE TABLE IF NOT EXISTS BATTER_INFO AS
 	SELECT BC.batter AS Batter_ID, BC.atBat AS atBat, BC.Hit AS Hit, G.game_ID AS game_ID, date(G.local_date) AS Game_Date
-	FROM batter_counts BC, game G
-	WHERE G.game_id = BC.game_id
+	FROM batter_counts BC
+	JOIN game G
+	ON G.game_id = BC.game_id
 	ORDER BY BC.batter;
 
 SELECT * FROM Batter_info
 LIMIT 5;
 
 
--- batting AVG = Hits/ atBat
+-- batting AVG = Hits/ atBat (atBat should greater than 0)
 -- create a historic avg table for each player
 DROP TABLE IF EXISTS HISTROIC_BATTING_AVG;
 
@@ -83,31 +84,19 @@ SELECT R1.Batter_ID,
        R1.Game_Date,
 	   R1.Game_ID,
 	   R1.100_days_prior,
-       (SELECT R2.Hit/R2.atBat
-        FROM ROLLING_BATTING_AVG_INFO R2
-		JOIN ROLLING_BATTING_AVG_INFO R1 ON R1.Batter_ID = R2.Batter_ID
-        WHERE R2.Game_Date BETWEEN R1.100_days_prior and DATE_SUB(DATE(R1.Game_Date), INTERVAL 1 DAY)
-              AND R1.Batter_ID = R2.Batter_ID) AS 100_Rolling_AVG
-FROM ROLLING_BATTING_AVG_INFO R1
+       SUM(R2.Hit)/SUM(R2.atBat)
+
+FROM ROLLING_BATTING_AVG_INFO R2
 JOIN ROLLING_BATTING_AVG_INFO R1 ON R1.Batter_ID = R2.Batter_ID
-GROUP BY R1.Batter_ID, R1.Game_Date;
+WHERE R2.Game_Date BETWEEN R1.100_days_prior and DATE_SUB(DATE(R1.Game_Date), INTERVAL 1 DAY)
 
-
--- ROLLING_BATTING_AVG_2(Second Edition Slow)
-DROP TABLE IF EXISTS ROLLING_BATTING_AVG_2;
-
-CREATE TABLE IF NOT EXISTS ROLLING_BATTING_AVG_2 AS
-SELECT R1.Game_Date, R1.Batter_ID, sum(R2.hit)/sum(R2.atBat) AS 100_rolling_avg
-FROM ROLLING_BATTING_AVG_INFO R1
-JOIN ROLLING_BATTING_AVG_INFO R2
-  ON R2.Game_Date BETWEEN R1.100_days_prior AND DATE_SUB(DATE(R1.Game_Date), INTERVAL 1 DAY)
 GROUP BY R1.Batter_ID, R1.Game_Date;
 
 
 
 """
 -- USE SQL WINDOW (Still in Progress)
-DROP TABLE IF EXISTS ROLLING_BATTING_AVG_3;
+DROP TABLE IF EXISTS ROLLING_BATTING_AVG_2;
 
 CREATE TABLE IF NOT EXISTS ROLLING_BATTING_AVG_3 AS
 SELECT Batter_ID, Game_ID, Game_Date,
