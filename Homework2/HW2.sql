@@ -1,7 +1,5 @@
--- create a table batter_info only keep useful fields: batter_id, atbat, hit, game_id, date
-DROP TABLE IF EXISTS BATTER_INFO;
-
-CREATE TABLE IF NOT EXISTS BATTER_INFO AS
+-- create a temporary table batter_info only keep useful fields: batter_id, atbat, hit, game_id, date
+CREATE TEMPORARY TABLE IF NOT EXISTS BATTER_INFO AS
 	SELECT BC.batter AS Batter_ID, BC.atBat AS atBat, BC.Hit AS Hit, G.game_ID AS game_ID, date(G.local_date) AS Game_Date
 	FROM batter_counts BC
 	JOIN game G
@@ -33,7 +31,7 @@ CREATE TABLE IF NOT EXISTS HISTROIC_BATTING_AVG_1 AS
 	GROUP BY batter;
 """
 
--- create an Annual avg table for each player
+-- create an Annual avg table for each player by using my temporary table
 DROP TABLE IF EXISTS ANNUAL_BATTING_AVG;
 
 CREATE TABLE IF NOT EXISTS ANNUAL_BATTING_AVG AS
@@ -61,10 +59,8 @@ WHERE atBat > 0
 GROUP BY Batter_ID, Year;
 """
 
--- create a table with all info(batter_id, game_date, atBat, Hit, 100_days_prior) needed in calculating ROLLING batting average
-DROP TABLE IF EXISTS ROLLING_BATTING_AVG_INFO;
-
-CREATE TABLE IF NOT EXISTS ROLLING_BATTING_AVG_INFO AS
+-- create a TEMPORARY table with all info(batter_id, game_date, atBat, Hit, 100_days_prior) needed in calculating ROLLING batting average
+CREATE TEMPORARY TABLE IF NOT EXISTS ROLLING_BATTING_AVG_INFO AS
 SELECT Batter_ID, Game_ID, DATE(Game_Date) as Game_Date, SUM(atBat) AS atBat, SUM(Hit) AS Hit, DATE_SUB(DATE(Game_Date), INTERVAL 100 DAY) AS 100_days_prior
 FROM BATTER_INFO
 WHERE atBat > 0
@@ -77,41 +73,58 @@ LIMIT 5;
 
 -- create 100 days rolling table (First Edition slow...)
 -- Subquery(Slow)
-DROP TABLE IF EXISTS ROLLING_BATTING_AVG_1;
+DROP TABLE IF EXISTS ROLLING_BATTING_AVG;
 
-CREATE TABLE IF NOT EXISTS ROLLING_BATTING_AVG_1 AS
-SELECT R1.Batter_ID,
-       R1.Game_Date,
-	   R1.Game_ID,
-	   R1.100_days_prior,
-       SUM(R2.Hit)/SUM(R2.atBat)
-
-FROM ROLLING_BATTING_AVG_INFO R2
-JOIN ROLLING_BATTING_AVG_INFO R1 ON R1.Batter_ID = R2.Batter_ID
-WHERE R2.Game_Date BETWEEN R1.100_days_prior and DATE_SUB(DATE(R1.Game_Date), INTERVAL 1 DAY)
-
-GROUP BY R1.Batter_ID, R1.Game_Date;
-
-
+CREATE TABLE IF NOT EXISTS ROLLING_BATTING_AVG AS
+SELECT
+    R1.Batter_ID,
+    R1.Game_Date,
+    R1.Game_ID,
+	R1.100_days_prior,
+    (
+        SELECT SUM(R2.Hit)/SUM(R2.atBat)
+        FROM ROLLING_BATTING_AVG_INFO R2
+        WHERE
+			R2.atBat > 0
+            AND R2.Batter_ID = R1.Batter_ID
+            AND R2.Game_Date BETWEEN R1.100_days_prior and DATE_SUB(DATE(R1.Game_Date), INTERVAL 1 DAY)
+    ) AS 100_Rolling_AVG
+	FROM ROLLING_BATTING_AVG_INFO AS R1
+	GROUP BY Batter_ID, Game_ID
+	ORDER BY Batter_ID, Game_ID;
 
 """
 -- USE SQL WINDOW (Still in Progress)
-DROP TABLE IF EXISTS ROLLING_BATTING_AVG_2;
+DROP TABLE IF EXISTS ROLLING_BATTING_AVG_1;
 
-CREATE TABLE IF NOT EXISTS ROLLING_BATTING_AVG_3 AS
+CREATE TABLE IF NOT EXISTS ROLLING_BATTING_AVG_1 AS
 SELECT Batter_ID, Game_ID, Game_Date,
 SUM(atBat) OVER (
     PARTITION BY Batter_ID
     ORDER BY Game_Date ASC
-    RANGE BETWEEN 100 PRECEDING AND CURRENT ROW
+    RANGE BETWEEN INTERVAL 100 DAY PRECEDING AND CURRENT ROW
   ) AS 100_days_atBat,
-
 SUM(Hit) OVER (
     PARTITION BY Batter_ID
     ORDER BY Game_Date ASC
-    RANGE BETWEEN 100 PRECEDING AND CURRENT ROW
+    RANGE BETWEEN INTERVAL 100 DAY PRECEDING AND CURRENT ROW
   ) AS 100_days_Hit
-
-FROM ROLLING_BATTING_AVG_INFO
+FROM ROLLING_BATTING_AVG_INFO limit 10;
 GROUP BY Batter_ID, Game_Date;
 """
+
+SELECT
+    R1.Batter_ID,
+    R1.Game_Date,
+    R1.Game_ID,
+	R1.100_days_prior,
+    (SELECT SUM(R2.Hit)/SUM(R2.atBat)
+        FROM ROLLING_BATTING_AVG_INFO R2
+        WHERE
+			R2.atBat > 0
+            AND R2.Batter_ID = R1.Batter_ID
+            AND R2.Game_Date BETWEEN R1.100_days_prior and DATE_SUB(DATE(R1.Game_Date), INTERVAL 1 DAY)
+    ) AS 100_Rolling_AVG
+	FROM ROLLING_BATTING_AVG_INFO AS R1
+	limit 100;
+
