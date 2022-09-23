@@ -6,9 +6,6 @@ CREATE TEMPORARY TABLE IF NOT EXISTS BATTER_INFO AS
 	ON G.game_id = BC.game_id
 	ORDER BY BC.batter;
 
-SELECT * FROM Batter_info
-LIMIT 5;
-
 
 -- batting AVG = Hits/ atBat (atBat should greater than 0)
 -- create a historic avg table for each player
@@ -20,18 +17,8 @@ CREATE TABLE IF NOT EXISTS HISTROIC_BATTING_AVG AS
 	WHERE atBat > 0
 	GROUP BY Batter_ID;
 
-SELECT * FROM HISTROIC_BATTING_AVG
-LIMIT 5;
 
-"""
-CREATE TABLE IF NOT EXISTS HISTROIC_BATTING_AVG_1 AS
-	SELECT batter, SUM(Hit)/SUM(atBat) AS HISTROIC_AVG
-	FROM batter_counts
-	WHERE atBat > 0
-	GROUP BY batter;
-"""
-
--- create an Annual avg table for each player by using my temporary table
+-- create an Annual avg table for each player by using my temporary table BATTER_INFO
 DROP TABLE IF EXISTS ANNUAL_BATTING_AVG;
 
 CREATE TABLE IF NOT EXISTS ANNUAL_BATTING_AVG AS
@@ -40,24 +27,7 @@ CREATE TABLE IF NOT EXISTS ANNUAL_BATTING_AVG AS
 	WHERE atBat > 0
 	GROUP BY Batter_ID, YEAR(Game_Date);
 
-SELECT * FROM ANNUAL_BATTING_AVG
-LIMIT 5;
 
-"""
-# create a table with all info needed in calculating Annual batting average
-DROP TABLE IF EXISTS ANNUAL_BATTING_AVG_INFO;
-
-CREATE TABLE IF NOT EXISTS ANNUAL_BATTING_AVG_INFO AS
-SELECT Batter_ID, YEAR(Game_Date) as Year, SUM(atBat) AS atBat, SUM(Hit) AS Hit
-FROM BATTER_INFO
-GROUP BY Batter_ID, YEAR(Game_Date);
-
-
-SELECT Batter_ID, Year, Hit/atBat AS ANNUAL_AVG
-FROM ANNUAL_BATTING_AVG_INFO
-WHERE atBat > 0
-GROUP BY Batter_ID, Year;
-"""
 
 -- create a TEMPORARY table with all info(batter_id, game_date, atBat, Hit, 100_days_prior) needed in calculating ROLLING batting average
 CREATE TEMPORARY TABLE IF NOT EXISTS ROLLING_BATTING_AVG_INFO AS
@@ -67,64 +37,41 @@ WHERE atBat > 0
 GROUP BY Batter_ID, DATE(Game_Date);
 
 
-SELECT * FROM ROLLING_BATTING_AVG_INFO
-LIMIT 5;
-
-
--- create 100 days rolling table (First Edition slow...)
--- Subquery(Slow)
-DROP TABLE IF EXISTS ROLLING_BATTING_AVG;
-
-CREATE TABLE IF NOT EXISTS ROLLING_BATTING_AVG AS
-SELECT
-    R1.Batter_ID,
-    R1.Game_Date,
-    R1.Game_ID,
-	R1.100_days_prior,
-    (
-        SELECT SUM(R2.Hit)/SUM(R2.atBat)
-        FROM ROLLING_BATTING_AVG_INFO R2
-        WHERE
-			R2.atBat > 0
-            AND R2.Batter_ID = R1.Batter_ID
-            AND R2.Game_Date BETWEEN R1.100_days_prior and DATE_SUB(DATE(R1.Game_Date), INTERVAL 1 DAY)
-    ) AS 100_Rolling_AVG
-	FROM ROLLING_BATTING_AVG_INFO AS R1
-	GROUP BY Batter_ID, Game_ID
-	ORDER BY Batter_ID, Game_ID;
-
-"""
--- USE SQL WINDOW (Still in Progress)
-DROP TABLE IF EXISTS ROLLING_BATTING_AVG_1;
-
-CREATE TABLE IF NOT EXISTS ROLLING_BATTING_AVG_1 AS
+-- USE SQL WINDOW
+-- Create a temporary rolling_batting table
+-- USE SQL WINDOW to find SUM of 100 days atBat and 100 days Hit
+-- unxi_timestamp (100 days = 8640000 seconds), so time between 8640000 and 1 is fine
+DROP TEMPORARY TABLE IF EXISTS ROLLING_BATTING_AVG;
+CREATE TEMPORARY TABLE IF NOT EXISTS ROLLING_BATTING_AVG AS
 SELECT Batter_ID, Game_ID, Game_Date,
 SUM(atBat) OVER (
     PARTITION BY Batter_ID
-    ORDER BY Game_Date ASC
-    RANGE BETWEEN INTERVAL 100 DAY PRECEDING AND CURRENT ROW
+    ORDER BY unix_timestamp(Game_Date)
+    RANGE BETWEEN 8640000 PRECEDING AND 1 PRECEDING
   ) AS 100_days_atBat,
 SUM(Hit) OVER (
     PARTITION BY Batter_ID
-    ORDER BY Game_Date ASC
-    RANGE BETWEEN INTERVAL 100 DAY PRECEDING AND CURRENT ROW
+    ORDER BY unix_timestamp(Game_Date)
+    RANGE BETWEEN 8640000 PRECEDING AND 1 PRECEDING
   ) AS 100_days_Hit
-FROM ROLLING_BATTING_AVG_INFO limit 10;
-GROUP BY Batter_ID, Game_Date;
-"""
+FROM ROLLING_BATTING_AVG_INFO;
 
-SELECT
-    R1.Batter_ID,
-    R1.Game_Date,
-    R1.Game_ID,
-	R1.100_days_prior,
-    (SELECT SUM(R2.Hit)/SUM(R2.atBat)
-        FROM ROLLING_BATTING_AVG_INFO R2
-        WHERE
-			R2.atBat > 0
-            AND R2.Batter_ID = R1.Batter_ID
-            AND R2.Game_Date BETWEEN R1.100_days_prior and DATE_SUB(DATE(R1.Game_Date), INTERVAL 1 DAY)
-    ) AS 100_Rolling_AVG
-	FROM ROLLING_BATTING_AVG_INFO AS R1
-	limit 100;
+
+-- Create Final 100 days Rolling table
+DROP TABLE IF EXISTS 100_ROLLING_BATTING_AVG;
+CREATE TABLE IF NOT EXISTS 100_ROLLING_BATTING_AVG AS
+SELECT Batter_ID, Game_ID, Game_Date, 100_days_Hit/100_days_atBat AS 100_Rolling_AVG
+FROM ROLLING_BATTING_AVG
+WHERE 100_days_atBat > 0;
+
+
+SELECT * FROM HISTROIC_BATTING_AVG
+LIMIT 5;
+
+SELECT * FROM ANNUAL_BATTING_AVG
+LIMIT 5;
+
+SELECT * FROM 100_ROLLING_BATTING_AVG
+LIMIT 5;
+
 
