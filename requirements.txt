@@ -6,3 +6,11 @@
 #
 numpy==1.23.1
     # via -r requirements.in
+
+
+pyspark==3.0.3
+    # via
+    #   -r requirements.in
+    #   pyspark-stubs
+pyspark-stubs==3.0.0.post3
+    # via -r requirements.in
