@@ -39,10 +39,7 @@ class RollingAVGTransform(
 
         dataset = dataset.withColumn(
             "SUM_of_atBat", func.sum(dataset[input_cols[2]]).over(w)
-        )
-        dataset = dataset.withColumn(
-            "SUM_of_Hit", func.sum(dataset[input_cols[3]]).over(w)
-        )
+        ).withColumn("SUM_of_Hit", func.sum(dataset[input_cols[3]]).over(w))
         dataset = dataset.withColumn(
             output_col, col("SUM_of_Hit") / col("SUM_of_atBat")
         )

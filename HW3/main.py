@@ -42,6 +42,8 @@ def main():
     )
 
     # Generate a rolling average dataframe through transformer
+    # For future implement purpose:
+    # InputCols' order is important:0:Batter_ID-->1:Game_Date-->2:atBat-->3:Hit
     rolling = RollingAVGTransform(
         inputCols=["Batter_ID", "Game_Date", "atBat", "Hit"],
         outputCol="Rolling_Average",
