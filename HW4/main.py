@@ -1,6 +1,7 @@
-# import sys
-# import matplotlib.pyplot as plt
-# import numpy
+import sys
+
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import statsmodels.api
 
@@ -11,23 +12,11 @@ from plotly import graph_objects as go
 
 # from sklearn import datasets
 from sklearn.datasets import fetch_openml
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import confusion_matrix
+from sklearn.model_selection import train_test_split
 
-# load dataset
-titanic = fetch_openml("titanic", version=1, as_frame=True)
-# dataset only contains predictors
-df = titanic["data"]
-
-# add response variable
-df["survived"] = titanic["target"]
-
-# dataframe contains both a response and predictors
-df = pd.DataFrame(df)
-
-# Given a list of predictors and the response columns
-response = ["survived"]
-predictors = list(df.columns)
-predictors.remove("survived")
+# from sklearn.inspection import permutation_importance
 
 
 # Build a function to Determine if response is continuous or boolean (don't worry about >2 category responses)
@@ -50,11 +39,16 @@ def cont_bool(predictor_list):
         return b
 
 
-print("Response '{}' is {}.".format(response[0], response_con_bool(df[response[0]])))
+# print("Response '{}' is {}.".format(response[0], response_con_bool(df[response[0]])))
 
-
+"""
+cont_pred = []
 for i in predictors:
+    if cont_bool(df[i]) == "continous":
+        cont_pred.append(i)
     print("Predictor '{}' is {}.".format(i, cont_bool(df[i])))
+print(cont_pred)
+"""
 
 
 # Categorical Response by Categorical Predictor
@@ -77,7 +71,7 @@ def cat_response_cat_predictor(cat_response, cat_predictor):
     return
 
 
-cat_response_cat_predictor(df["survived"], df["sex"])
+# cat_response_cat_predictor(df["survived"], df["sex"])
 
 
 # Categorical Response by Continous Predictor
@@ -124,7 +118,7 @@ def cat_response_cont_predictor(cat_response, cont_predictor):
     return
 
 
-cat_response_cont_predictor(df["survived"], df["age"])
+# cat_response_cont_predictor(df["survived"], df["age"])
 
 
 # Continous Response by Categorical Predictor
@@ -171,7 +165,7 @@ def cont_response_cat_predictor(cont_response, cat_predictor):
     return
 
 
-cont_response_cat_predictor(df["age"], df["survived"])
+# cont_response_cat_predictor(df["age"], df["survived"])
 
 
 # Continous Response by Continous Predictor
@@ -199,7 +193,7 @@ def cont_response_cont_predictor(cont_response, cont_predictor):
     return
 
 
-cont_response_cont_predictor(df["age"], df["body"])
+# cont_response_cont_predictor(df["age"], df["body"])
 
 
 # Continous Response by Continous Predictor Linear Regression
@@ -232,7 +226,7 @@ def plot_linear(cont_response, cont_predictor):
     return
 
 
-plot_linear(df["body"], df["age"])
+# plot_linear(df["body"], df["age"])
 
 
 # Categorical Response by Continous Predictor Logistic Regression
@@ -259,10 +253,111 @@ def plot_logistic(cat_response, cont_predictor):
     fig.show()
 
     fig.write_html(
-        file="cat_response_cat_predictor_logistic_regression_plot.html",
+        file="cat_response_cont_predictor_logistic_regression_plot.html",
         include_plotlyjs="cdn",
     )
     return
 
 
-plot_logistic(df["survived"], df["age"])
+# plot_logistic(df["survived"], df["age"])
+
+
+# Random Forest Ranking and Plot
+def random_forest_ranking(df_cont_pred, response):
+    X = df_cont_pred.fillna(0)
+    y = response
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.25, random_state=12
+    )
+    rf = RandomForestRegressor(n_estimators=100)
+    rf.fit(X_train, y_train)
+    sorted_idx = rf.feature_importances_.argsort()
+    plt.barh(X.columns[sorted_idx], rf.feature_importances_[sorted_idx])
+    plt.xlabel("Random Forest Feature Importance")
+    important_df = pd.DataFrame(
+        {
+            "Rank": np.arange(1, len(df_cont_pred.columns) + 1, 1),
+            "predictor": X.columns[-sorted_idx],
+            "Importance": rf.feature_importances_[-sorted_idx],
+        }
+    )
+    return important_df
+
+
+# random_forest_ranking(df[cont_pred], df["survived"])
+
+
+def main():
+    # load dataset
+    titanic = fetch_openml("titanic", version=1, as_frame=True)
+    # dataset only contains predictors
+    df = titanic["data"]
+
+    # add response variable
+    df["survived"] = titanic["target"]
+
+    # dataframe contains both a response and predictors
+    df = pd.DataFrame(df)
+    df.drop(
+        ["boat", "body", "home.dest", "cabin"], axis=1, inplace=True
+    )  # cabin has 77% missing value so just drop it
+    df = df.dropna()
+
+    # Given a list of predictors and the response columns
+    response = ["survived"]
+    predictors = list(df.columns)
+    predictors.remove(response[0])
+    predictors
+
+    cont_pred = []
+    if response_con_bool(df[response[0]]) == "continous":
+        for i in predictors:
+            if cont_bool(df[i]) == "continous":
+                cont_pred.append(i)
+                print(
+                    "Continous Response by Continous Predictor: {} vs. {}".format(
+                        response[0], i
+                    )
+                )
+                cont_response_cont_predictor(df[response[0]], df[i])  # plot html
+                plot_linear(
+                    df[response[0]], df[i]
+                )  # linear regression plot html, p-value, t-score
+                random_forest_ranking(
+                    df[cont_pred], df[response[0]]
+                )  # Random Forest Ranking Dataframe and plot
+            else:
+                print(
+                    "Continous Response by Categorical Predictor: {} vs. {}".format(
+                        response[0], i
+                    )
+                )
+                cont_response_cat_predictor(df[response[0]], df[i])  # plot html
+
+    else:
+        for i in predictors:
+            if cont_bool(df[i]) == "continous":
+                cont_pred.append(i)
+                print(
+                    "Categorical Response by Continous Predictor: {} vs. {}".format(
+                        response[0], i
+                    )
+                )
+                cat_response_cont_predictor(df[response[0]], df[i])  # plot html
+                plot_logistic(
+                    df[response[0]], df[i]
+                )  # logictic regression plot html, p-value, t-score
+                random_forest_ranking(
+                    df[cont_pred], df[response[0]]
+                )  # Random Forest Ranking Dataframe and plot
+            else:
+                print(
+                    "Categorical Response by Categorical Predictor: {} vs. {}".format(
+                        response[0], i
+                    )
+                )
+                cat_response_cat_predictor(df[response[0]], df[i])  # plot html
+
+
+if __name__ == "__main__":
+    sys.exit(main())
