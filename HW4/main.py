@@ -57,7 +57,7 @@ for i in predictors:
 
 # Categorical Response by Categorical Predictor
 def cat_response_cat_predictor(cat_response, cat_predictor):
-    conf_matrix = confusion_matrix(cat_predictor, cat_response)
+    conf_matrix = confusion_matrix(cat_predictor.astype(str), cat_response.astype(str))
 
     fig_no_relationship = go.Figure(
         data=go.Heatmap(z=conf_matrix, zmin=0, zmax=conf_matrix.max())
@@ -75,17 +75,14 @@ def cat_response_cat_predictor(cat_response, cat_predictor):
     return
 
 
-cat_response_cat_predictor(df["survived"].astype(str), df["sex"].astype(str))
+cat_response_cat_predictor(df["survived"], df["sex"])
 
 
 # Categorical Response by Continous Predictor
 def cat_response_cont_predictor(cat_response, cont_predictor):
     # Group data together
     df = pd.DataFrame(
-        {
-            "predictor": cont_predictor.astype(float),
-            "response": cat_response.astype(float),
-        }
+        {"predictor": cont_predictor.astype(float), "response": cat_response}
     )
 
     # Violin plot
@@ -93,7 +90,7 @@ def cat_response_cont_predictor(cat_response, cont_predictor):
         df, y="predictor", x="response", color="response", violinmode="overlay"
     )
     violin.update_layout(
-        title=f"Violin plot of {'predictor'} grouped by {'response'}",
+        title="Violin plot of {} grouped by {}".format("predictor", "response")
     )
     violin.update_xaxes(title_text="response")
     violin.update_yaxes(title_text="predictor")
@@ -107,19 +104,97 @@ def cat_response_cont_predictor(cat_response, cont_predictor):
     # Distribution plot
     hist = px.histogram(
         df,
-        x="predictor",
+        x="response",
         y="predictor",
         color="response",
         marginal="box",
         hover_data=df.columns,
     )
+    hist.update_layout(
+        title="Histogram plot of {} grouped by {}".format("predictor", "response")
+    )
     hist.show()
 
     hist.write_html(
-        file="cat_response_cont_predictor_violin_plot.html",
+        file="cat_response_cont_predictor_hist_plot.html",
         include_plotlyjs="cdn",
     )
     return
 
 
 cat_response_cont_predictor(df["survived"], df["age"])
+
+
+# Continous Response by Categorical Predictor
+def cont_response_cat_predictor(cont_response, cat_predictor):
+    # Group data together
+    df = pd.DataFrame(
+        {"predictor": cat_predictor, "response": cont_response.astype(float)}
+    )
+
+    # Violin plot
+    violin = px.violin(
+        df, y="response", x="predictor", color="predictor", violinmode="overlay"
+    )
+    violin.update_layout(
+        title="Violin plot of {} grouped by {}".format("response", "predictor")
+    )
+    violin.update_xaxes(title_text="predictor")
+    violin.update_yaxes(title_text="response")
+    violin.show()
+
+    violin.write_html(
+        file="cont_response_cat_predictor_violin_plot.html",
+        include_plotlyjs="cdn",
+    )
+
+    # Distribution plot
+    hist = px.histogram(
+        df,
+        x="predictor",
+        y="response",
+        color="predictor",
+        marginal="box",
+        hover_data=df.columns,
+    )
+    hist.update_layout(
+        title="Histogram plot of {} grouped by {}".format("response", "predictor")
+    )
+    hist.show()
+
+    hist.write_html(
+        file="cont_response_cat_predictor_hist_plot.html",
+        include_plotlyjs="cdn",
+    )
+    return
+
+
+cont_response_cat_predictor(df["age"], df["survived"])
+
+
+# Continous Response by Continous Predictor
+def cont_response_cont_predictor(cont_response, cont_predictor):
+    # Group data together
+    df = pd.DataFrame(
+        {
+            "predictor": cont_predictor.astype(float),
+            "response": cont_response.astype(float),
+        }
+    )
+
+    scatter = px.scatter(df, x="predictor", y="response", trendline="ols")
+    scatter.update_layout(
+        title_text="Scatter Plot: {} vs. {}".format("predictor", "response")
+    )
+    scatter.update_xaxes(ticks="inside", title_text="predictor")
+    scatter.update_yaxes(ticks="inside", title_text="response")
+    scatter.show()
+
+    scatter.write_html(
+        file="cont_response_cont_predictor_scatter_plot.html",
+        include_plotlyjs="cdn",
+    )
+    return
+
+
+cont_response_cont_predictor(df["age"], df["body"])
