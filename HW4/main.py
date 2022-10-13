@@ -1,13 +1,15 @@
 # import sys
-
 # import matplotlib.pyplot as plt
 # import numpy
 import pandas as pd
+import statsmodels.api
 
 # from plotly import figure_factory as ff
 # import seaborn as sns
 from plotly import express as px
 from plotly import graph_objects as go
+
+# from sklearn import datasets
 from sklearn.datasets import fetch_openml
 from sklearn.metrics import confusion_matrix
 
@@ -198,3 +200,69 @@ def cont_response_cont_predictor(cont_response, cont_predictor):
 
 
 cont_response_cont_predictor(df["age"], df["body"])
+
+
+# Continous Response by Continous Predictor Linear Regression
+def plot_linear(cont_response, cont_predictor):
+    y = cont_response.fillna(0).to_numpy()
+    predictor = cont_predictor.fillna(0).to_numpy()
+
+    predictor1 = statsmodels.api.add_constant(predictor)
+    linear_regression_model = statsmodels.api.OLS(y, predictor1)
+    linear_regression_model_fitted = linear_regression_model.fit()
+
+    print(linear_regression_model_fitted.summary())
+
+    t_value = round(linear_regression_model_fitted.tvalues[1], 6)
+    p_value = "{:.6e}".format(linear_regression_model_fitted.pvalues[1])
+
+    # Plot the figure
+    fig = px.scatter(x=predictor, y=y, trendline="ols")
+    fig.update_layout(
+        title=f"Variable: {'feature_name'}: (t-value={t_value}) (p-value={p_value})",
+        xaxis_title=f"Variable: {'feature_name'}",
+        yaxis_title="y",
+    )
+    fig.show()
+
+    fig.write_html(
+        file="cont_response_cont_predictor_linear_regression_plot.html",
+        include_plotlyjs="cdn",
+    )
+    return
+
+
+plot_linear(df["body"], df["age"])
+
+
+# Categorical Response by Continous Predictor Logistic Regression
+def plot_logistic(cat_response, cont_predictor):
+    y = cat_response.astype(float).to_numpy()
+    predictor = cont_predictor.fillna(0).to_numpy()
+
+    predictor1 = statsmodels.api.add_constant(predictor)
+    logistic_regression_model = statsmodels.api.GLM(y, predictor1)
+    logistic_regression_model = logistic_regression_model.fit()
+
+    print(logistic_regression_model.summary())
+
+    t_value = round(logistic_regression_model.tvalues[1], 6)
+    p_value = "{:.6e}".format(logistic_regression_model.pvalues[1])
+
+    # Plot the figure
+    fig = px.scatter(x=predictor, y=y, trendline="ols")
+    fig.update_layout(
+        title=f"Variable: {'feature_name'}: (t-value={t_value}) (p-value={p_value})",
+        xaxis_title=f"Variable: {'feature_name'}",
+        yaxis_title="y",
+    )
+    fig.show()
+
+    fig.write_html(
+        file="cat_response_cat_predictor_logistic_regression_plot.html",
+        include_plotlyjs="cdn",
+    )
+    return
+
+
+plot_logistic(df["survived"], df["age"])
