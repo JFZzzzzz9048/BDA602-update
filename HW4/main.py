@@ -1,22 +1,46 @@
 import sys
 
-# import numpy as np
 # import matplotlib.pyplot as plt
+# import numpy as np
 import pandas as pd
+
+# import seaborn as sns
 import statsmodels.api
 
 # from plotly import figure_factory as ff
-# from sklearn.inspection import permutation_importance
 from plotly import express as px
 from plotly import graph_objects as go
 
-# import seaborn as sns
+# from scipy import stats
+# from sklearn import datasets
 from sklearn.datasets import fetch_openml
 from sklearn.ensemble import RandomForestRegressor
+
+# from sklearn.inspection import permutation_importance
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
 
-# from sklearn import datasets
+
+# Build a function to clean dataframe, return a ready to use dataframe
+def clean_df(dataframe):
+    for i in dataframe.columns:
+        if dataframe[i].dtype == "category" or dataframe[i].dtype == "object":
+            # categorical datatype fillna with mode
+            num = dataframe[i].mode()[0]
+            dataframe[i].fillna(num, inplace=True)
+            # dataframe[i] = labelencoder.fit_transform(dataframe[i])
+
+        elif len(set(dataframe[i])) < 0.05 * len(dataframe[i]):
+            # categorical datatype fillna with mode
+            num = dataframe[i].mode()[0]
+            dataframe[i].fillna(num, inplace=True)
+            # dataframe[i] = labelencoder.fit_transform(dataframe[i])
+        else:
+            # numerical datatype fillna with mean
+            num = dataframe[i].mean()
+            dataframe[i].fillna(num, inplace=True)
+    return dataframe
 
 
 # Build a function to Determine if response is continuous or boolean (don't worry about >2 category responses)
@@ -27,9 +51,6 @@ def response_con_bool(response_list):
         return "continous"
 
 
-# print("Response '{}' is {}.".format(response[0], response_con_bool(df[response[0]])))
-
-
 # Determine if the predictor is cat/cont
 def cont_bool(predictor_list):
     if predictor_list.dtype == "category" or predictor_list.dtype == "object":
@@ -38,16 +59,6 @@ def cont_bool(predictor_list):
         return "categorical"
     else:
         return "continous"
-
-
-"""
-cont_pred = []
-for i in predictors:
-    if cont_bool(df[i]) == "continous":
-        cont_pred.append(i)
-    print("Predictor '{}' is {}.".format(i, cont_bool(df[i])))
-print(cont_pred)
-"""
 
 
 # Build a function to plot Categorical Response by Categorical Predictor
@@ -67,8 +78,8 @@ def cat_response_cat_predictor(
         title=f"Categorical Predictor {predictor_name} by Categorical Response {response_name} (with relationship)",
         xaxis_title=response_name,
         yaxis_title=predictor_name,
-        yaxis_range=[1.5, 3.5],
-        xaxis_range=[-0.5, 1.5],
+        # yaxis_range=[1.5,3.5],
+        # xaxis_range=[-0.5,1.5]
     )
     fig_no_relationship.show()
     fig_no_relationship.write_html(
@@ -76,9 +87,6 @@ def cat_response_cat_predictor(
         include_plotlyjs="cdn",
     )
     return predictor_name, file_location
-
-
-# cat_response_cat_predictor(df["survived"], df["sex"])
 
 
 # Build a function to plot Categorical Response by Continous Predictor
@@ -134,9 +142,6 @@ def cat_response_cont_predictor(
     return predictor_name, file_location_violin, file_location_hist
 
 
-# cat_response_cont_predictor(df["survived"], df["age"])
-
-
 # Build a function to plot Continous Response by Categorical Predictor
 def cont_response_cat_predictor(
     cont_response, cat_predictor, predictor_name, response_name
@@ -189,9 +194,6 @@ def cont_response_cat_predictor(
     return predictor_name, file_location_violin, file_location_hist
 
 
-# cont_response_cat_predictor(df["age"], df["survived"])
-
-
 # Build a function to plot Continous Response by Continous Predictor
 def cont_response_cont_predictor(
     cont_response, cont_predictor, predictor_name, response_name
@@ -223,10 +225,7 @@ def cont_response_cont_predictor(
     return predictor_name, file_location
 
 
-# cont_response_cont_predictor(df["age"], df['fare'])
-
-
-# Build a function to plot and perform linear regression
+# Plot linear Regression and calculate p-value and t-score
 def plot_linear(cont_response, cont_predictor, predictor_name, response_name):
     file_location = "plots/{}_linear_regression_plot.html".format(predictor_name)
     y = cont_response.fillna(0).to_numpy()
@@ -257,10 +256,7 @@ def plot_linear(cont_response, cont_predictor, predictor_name, response_name):
     return t_value, p_value, file_location
 
 
-# plot_linear(df['fare'], df['age'])
-
-
-# Build a function to plot and perform logistic regression
+# Plot logistic Regression and calculate p-value and t-score
 def plot_logistic(cat_response, cont_predictor, predictor_name, response_name):
     file_location = "plots/{}_logistic_regression_plot.html".format(predictor_name)
 
@@ -292,10 +288,7 @@ def plot_logistic(cat_response, cont_predictor, predictor_name, response_name):
     return t_value, p_value, file_location
 
 
-# plot_logistic(df['survived'], df['age'])
-
-
-# Random Forest and Ranking
+# Perform Random Forest and Ranking
 def random_forest_ranking(df_cont_pred, response):
     X = df_cont_pred
     y = response
@@ -319,9 +312,6 @@ def random_forest_ranking(df_cont_pred, response):
     return X.columns[-sorted_idx], rf.feature_importances_[-sorted_idx]
 
 
-# random_forest_ranking(df[cont_pred], df['survived'])
-
-
 def main():
     # load dataset
     titanic = fetch_openml("titanic", version=1, as_frame=True)
@@ -333,10 +323,7 @@ def main():
 
     # dataframe contains both a response and predictors
     df = pd.DataFrame(df)
-    df.drop(
-        ["boat", "body", "home.dest", "cabin"], axis=1, inplace=True
-    )  # cabin has 77% missing value so just drop it
-    df = df.dropna()
+    df = clean_df(df)
 
     # Given a list of predictors and the response columns
     response = ["survived"]
@@ -347,6 +334,8 @@ def main():
     t_score = []
     p_value = []
     # rank = []
+    # file_location = []
+    labelencoder = LabelEncoder()
 
     if response_con_bool(df[response[0]]) == "continous":
         for i in predictors:
@@ -370,6 +359,7 @@ def main():
                 )  # Random Forest Ranking Dataframe and plot
 
             else:
+                df[i] = labelencoder.fit_transform(df[i])
                 print(
                     "Continous Response by Categorical Predictor: {} vs. {}".format(
                         response[0], i
@@ -380,6 +370,7 @@ def main():
                 )  # plot html
 
     else:
+        df[response[0]] = labelencoder.fit_transform(df[response[0]])
         for i in predictors:
             if cont_bool(df[i]) == "continous":
                 cont_pred.append(i)
@@ -391,7 +382,7 @@ def main():
                 cat_response_cont_predictor(
                     df[response[0]], df[i], i, response[0]
                 )  # plot html
-                t_score_1, p_value_1 = plot_logistic(
+                t_score_1, p_value_1, file_location = plot_logistic(
                     df[response[0]], df[i], i, response[0]
                 )  # logictic regression plot html, p-value, t-score
                 t_score.append(t_score_1)
