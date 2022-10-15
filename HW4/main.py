@@ -499,14 +499,11 @@ file_unweight_link = []
 file_location_diff_plot = []
 labelencoder = LabelEncoder()
 
-for i in predictors:
-    if cont_bool(df[i]) == "continous":
-        cont_pred.append(i)
-
 
 if response_con_bool(df[response[0]]) == "continous":
     for i in predictors:
         if cont_bool(df[i]) == "continous":
+            cont_pred.append(i)
             # print("Continous Response by Continous Predictor: {} vs. {}".format(response[0], i))
             predictor_name_1, file_location_cont_cont_1 = cont_response_cont_predictor(
                 df[response[0]], df[i], i, response[0]
