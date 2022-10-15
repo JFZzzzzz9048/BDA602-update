@@ -674,5 +674,8 @@ df_completed.to_html(
     escape=False,
     render_links=True,
 )
-# print(final_report_url)
+print(final_report_url)
 webbrowser.open(final_report_url)
+
+
+# My final report website is: https://jfzzzzzz9048.github.io/BDA_HW_plot/plots/report.html
