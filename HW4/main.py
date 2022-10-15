@@ -1,34 +1,28 @@
 import sys
 
-# import matplotlib.pyplot as plt
-# import numpy as np
+import numpy as np
 import pandas as pd
-
-# import seaborn as sns
 import statsmodels.api
-
-# from plotly import figure_factory as ff
 from plotly import express as px
 from plotly import graph_objects as go
-
-# from scipy import stats
-# from sklearn import datasets
+from scipy import stats
 from sklearn.datasets import fetch_openml
 from sklearn.ensemble import RandomForestRegressor
-
-# from sklearn.inspection import permutation_importance
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
 
-# Build a function to clean dataframe, return a ready to use dataframe
+# build a function to clean dataframe
 def clean_df(dataframe):
     for i in dataframe.columns:
         if dataframe[i].dtype == "category" or dataframe[i].dtype == "object":
             # categorical datatype fillna with mode
             num = dataframe[i].mode()[0]
             dataframe[i].fillna(num, inplace=True)
+            # Drop categorical predictor with more than half different categories
+            if len(set(dataframe[i])) > 0.5 * len(dataframe[i]):
+                dataframe = dataframe.drop(columns=i)
             # dataframe[i] = labelencoder.fit_transform(dataframe[i])
 
         elif len(set(dataframe[i])) < 0.05 * len(dataframe[i]):
@@ -81,11 +75,12 @@ def cat_response_cat_predictor(
         # yaxis_range=[1.5,3.5],
         # xaxis_range=[-0.5,1.5]
     )
-    fig_no_relationship.show()
+    # fig_no_relationship.show()
     fig_no_relationship.write_html(
         file=file_location,
         include_plotlyjs="cdn",
     )
+
     return predictor_name, file_location
 
 
@@ -93,11 +88,10 @@ def cat_response_cat_predictor(
 def cat_response_cont_predictor(
     cat_response, cont_predictor, predictor_name, response_name
 ):
-    file_location_violin = "plots/categorical_{}_continous_{}_violin_plot.html".format(
-        response_name, predictor_name
-    )
-    file_location_hist = "plots/categorical_{}_continous_{}_hist_plot.html".format(
-        response_name, predictor_name
+    file_location_cat_cont = (
+        "plots/categorical_{}_continous_{}_violin_hist_plot.html".format(
+            response_name, predictor_name
+        )
     )
 
     # Group data together
@@ -114,12 +108,7 @@ def cat_response_cont_predictor(
     )
     violin.update_xaxes(title_text=response_name)
     violin.update_yaxes(title_text=predictor_name)
-    violin.show()
-
-    violin.write_html(
-        file=file_location_violin,
-        include_plotlyjs="cdn",
-    )
+    # violin.show()
 
     # Distribution plot
     hist = px.histogram(
@@ -133,25 +122,25 @@ def cat_response_cont_predictor(
     hist.update_layout(
         title="Histogram plot of {} grouped by {}".format(predictor_name, response_name)
     )
-    hist.show()
+    # hist.show()
 
-    hist.write_html(
-        file=file_location_hist,
-        include_plotlyjs="cdn",
-    )
-    return predictor_name, file_location_violin, file_location_hist
+    with open(file_location_cat_cont, "a") as f:
+        f.write(violin.to_html(full_html=False, include_plotlyjs="cdn"))
+        f.write(hist.to_html(full_html=False, include_plotlyjs="cdn"))
+
+    return predictor_name, file_location_cat_cont
 
 
 # Build a function to plot Continous Response by Categorical Predictor
 def cont_response_cat_predictor(
     cont_response, cat_predictor, predictor_name, response_name
 ):
-    file_location_violin = "plots/continous_{}_categorical_{}_violin_plot.html".format(
-        response_name, predictor_name
+    file_location_cont_cat = (
+        "plots/continous_{}_categorical_{}_violin_hist_plot.html".format(
+            response_name, predictor_name
+        )
     )
-    file_location_hist = "plots/continous_{}_categorical_{}_hist_plot.html".format(
-        response_name, predictor_name
-    )
+
     # Group data together
     df = pd.DataFrame(
         {"predictor": cat_predictor, "response": cont_response.astype(float)}
@@ -166,12 +155,7 @@ def cont_response_cat_predictor(
     )
     violin.update_xaxes(title_text=predictor_name)
     violin.update_yaxes(title_text=response_name)
-    violin.show()
-
-    violin.write_html(
-        file=file_location_violin,
-        include_plotlyjs="cdn",
-    )
+    # violin.show()
 
     # Distribution plot
     hist = px.histogram(
@@ -185,13 +169,13 @@ def cont_response_cat_predictor(
     hist.update_layout(
         title="Histogram plot of {} grouped by {}".format(response_name, predictor_name)
     )
-    hist.show()
+    # hist.show()
 
-    hist.write_html(
-        file=file_location_hist,
-        include_plotlyjs="cdn",
-    )
-    return predictor_name, file_location_violin, file_location_hist
+    with open(file_location_cont_cat, "a") as f:
+        f.write(violin.to_html(full_html=False, include_plotlyjs="cdn"))
+        f.write(hist.to_html(full_html=False, include_plotlyjs="cdn"))
+
+    return predictor_name, file_location_cont_cat
 
 
 # Build a function to plot Continous Response by Continous Predictor
@@ -216,7 +200,7 @@ def cont_response_cont_predictor(
     )
     scatter.update_xaxes(ticks="inside", title_text=predictor_name)
     scatter.update_yaxes(ticks="inside", title_text=response_name)
-    scatter.show()
+    # scatter.show()
 
     scatter.write_html(
         file=file_location,
@@ -225,7 +209,7 @@ def cont_response_cont_predictor(
     return predictor_name, file_location
 
 
-# Plot linear Regression and calculate p-value and t-score
+# Perform a linear Regression and return p-value and t-score
 def plot_linear(cont_response, cont_predictor, predictor_name, response_name):
     file_location = "plots/{}_linear_regression_plot.html".format(predictor_name)
     y = cont_response.fillna(0).to_numpy()
@@ -247,16 +231,16 @@ def plot_linear(cont_response, cont_predictor, predictor_name, response_name):
         xaxis_title="Variable: {}".format(predictor_name),
         yaxis_title=response_name,
     )
-    fig.show()
+    # fig.show()
 
     fig.write_html(
         file=file_location,
         include_plotlyjs="cdn",
     )
-    return t_value, p_value, file_location
+    return predictor_name, t_value, p_value, file_location
 
 
-# Plot logistic Regression and calculate p-value and t-score
+# Perform a logistic regression and return p-value and t-score
 def plot_logistic(cat_response, cont_predictor, predictor_name, response_name):
     file_location = "plots/{}_logistic_regression_plot.html".format(predictor_name)
 
@@ -279,16 +263,16 @@ def plot_logistic(cat_response, cont_predictor, predictor_name, response_name):
         xaxis_title="Variable: {}".format(predictor_name),
         yaxis_title=response_name,
     )
-    fig.show()
+    # fig.show()
 
     fig.write_html(
         file=file_location,
         include_plotlyjs="cdn",
     )
-    return t_value, p_value, file_location
+    return predictor_name, t_value, p_value, file_location
 
 
-# Perform Random Forest and Ranking
+# Random Forest and Ranking
 def random_forest_ranking(df_cont_pred, response):
     X = df_cont_pred
     y = response
@@ -300,16 +284,106 @@ def random_forest_ranking(df_cont_pred, response):
     sorted_idx = rf.feature_importances_.argsort()
     # plt.barh(X.columns[sorted_idx], rf.feature_importances_[sorted_idx])
     # plt.xlabel("Random Forest Feature Importance")
-    """
-    important_df = pd.DataFrame(
-        {
-            "Rank": np.arange(1, len(df_cont_pred.columns) + 1, 1),
-            "Predictor": X.columns[-sorted_idx],
-            "Importance": rf.feature_importances_[-sorted_idx],
-        }
-    )
-    """
+
     return X.columns[-sorted_idx], rf.feature_importances_[-sorted_idx]
+
+
+# Difference with mean of response along with it's plot (unweighted)
+# Reference: https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.binned_statistic.html
+def diff_mean_response(response_list, predictor_list, binNum, predictor_name):
+    labelencoder = LabelEncoder()
+    file_location = "plots/{}_difference_mean_plot.html".format(predictor_name)
+    file_weight = "dataframes/weight_{}_mean_diff_table.html".format(predictor_name)
+    file_unweight = "dataframes/unweight_{}_mean_diff_table.html".format(predictor_name)
+
+    hist, bins = np.histogram(labelencoder.fit_transform(predictor_list), binNum)
+    bin_means, bin_edges, binnumber = stats.binned_statistic(
+        labelencoder.fit_transform(predictor_list),
+        labelencoder.fit_transform(response_list),
+        statistic="mean",
+        bins=binNum,
+    )
+    bin_width = bin_edges[1] - bin_edges[0]
+    bin_centers = bin_edges[1:] - bin_width / 2
+    population_mean = np.average(labelencoder.fit_transform(response_list))
+
+    lower_bound = bin_centers - 0.5 * bin_width
+    upper_bound = bin_centers + 0.5 * bin_width
+    bin_centers
+    bin_count = hist
+    bin_means
+    population_mean_1 = [population_mean] * binNum
+    mean_sqr_diff = np.power((bin_means - population_mean), 2)
+    population_prop = bin_count / len(response_list)
+    mean_sqr_diff_weight = mean_sqr_diff * population_prop
+
+    d = {
+        "LowerBound": lower_bound,
+        "UpperBound": upper_bound,
+        "BinCenter": bin_centers,
+        "BinCount": bin_count,
+        "BinMean": bin_means,
+        "PopulationMean": population_mean_1,
+        "MeanSquaredDiff": mean_sqr_diff,
+        "PopulationPorption": population_prop,
+        "MeanSquaredDiffWeighted": mean_sqr_diff_weight,
+    }
+
+    df_weight = pd.DataFrame(data=d)
+
+    df_unweight = df_weight.drop(
+        columns=["PopulationPorption", "MeanSquaredDiffWeighted"]
+    )
+
+    fig_2 = go.Figure()
+
+    fig_2.add_trace(
+        go.Bar(x=bin_centers, y=hist, yaxis="y2", name="Population", opacity=0.5)
+    )
+
+    # Bin Mean - Population
+    fig_2.add_trace(
+        go.Scatter(x=bin_centers, y=bin_means, name="\u03BC_i - \u03BC_Population")
+    )
+
+    # Population Mean
+    fig_2.add_trace(
+        go.Scatter(
+            x=[
+                np.min(labelencoder.fit_transform(predictor_list)),
+                np.max(labelencoder.fit_transform(predictor_list)),
+            ],
+            y=[population_mean, population_mean],
+            name="\u03BC Population",
+            mode="lines",
+        )
+    )
+
+    fig_2.update_layout(
+        title=f"Difference with mean of response - {predictor_name}",
+        xaxis_title="Predictor Bin",
+        yaxis_title="Response",
+        yaxis2=dict(title="Population", overlaying="y", anchor="y3", side="right"),
+    )
+
+    # fig_2.show()
+
+    fig_2.write_html(
+        file=file_location,
+        include_plotlyjs="cdn",
+        include_mathjax="cdn",
+    )
+
+    html_weight = df_weight.to_html()
+    html_unweight = df_unweight.to_html()
+    text_file_weight = open(file_weight, "w")
+    text_file_unweight = open(file_unweight, "w")
+    text_file_weight.write(html_weight)
+    text_file_unweight.write(html_unweight)
+    text_file_weight.close()
+    text_file_unweight.close()
+
+    return predictor_name, file_weight, file_unweight, file_location
 
 
 def main():
@@ -323,6 +397,8 @@ def main():
 
     # dataframe contains both a response and predictors
     df = pd.DataFrame(df)
+
+    # Call clean_df() function to clean data
     df = clean_df(df)
 
     # Given a list of predictors and the response columns
@@ -330,76 +406,200 @@ def main():
     predictors = list(df.columns)
     predictors.remove(response[0])
 
+    """
+    Dataframe1: call plot function --> return predictor_name & html_plot_file_location
+    Dataframe2: call plot_linear/plot_logistic function --> return predictor_name, p-value, t-score,
+    html_regression_file_location
+    Dataframe3: call random_forest_ranking function --> return list: predictor_name, list: importance
+    Dataframe4: call diff_mean_response --> return predictor_name, weight_dataframe_link,
+    unweight_dataframe_link, plot_link
+    """
     cont_pred = []
     t_score = []
     p_value = []
-    # rank = []
-    # file_location = []
+    file_location_regression = []
+    html_plot_file_location = []
+    predictor_name_df1 = []
+    predictor_name_df2 = []
+    predictor_name_df4 = []
+    file_weight_link = []
+    file_unweight_link = []
+    file_location_diff_plot = []
     labelencoder = LabelEncoder()
 
     if response_con_bool(df[response[0]]) == "continous":
         for i in predictors:
             if cont_bool(df[i]) == "continous":
                 cont_pred.append(i)
-                print(
-                    "Continous Response by Continous Predictor: {} vs. {}".format(
-                        response[0], i
-                    )
-                )
-                cont_response_cont_predictor(
+                # print("Continous Response by Continous Predictor: {} vs. {}".format(response[0], i))
+                (
+                    predictor_name_1,
+                    file_location_cont_cont_1,
+                ) = cont_response_cont_predictor(
                     df[response[0]], df[i], i, response[0]
                 )  # plot html
-                t_score_1, p_value_1 = plot_linear(
+                (
+                    predictor_name_2,
+                    t_score_1,
+                    p_value_1,
+                    file_location_regression_1,
+                ) = plot_linear(
                     df[response[0]], df[i], i, response[0]
                 )  # linear regression plot html, p-value, t-score
-                t_score.append(t_score_1)
-                p_value.append(p_value_1)
                 pred_out, importance = random_forest_ranking(
                     df[cont_pred], df[response[0]]
                 )  # Random Forest Ranking Dataframe and plot
+                (
+                    predictor_name_4,
+                    file_weight_1,
+                    file_unweight_1,
+                    file_location_diff_plot_1,
+                ) = diff_mean_response(df[response[0]], df[i], 10, i)
+
+                # dataframe1
+                predictor_name_df1.append(predictor_name_1)
+                html_plot_file_location.append(file_location_cont_cont_1)
+
+                # dataframe2
+                predictor_name_df2.append(predictor_name_2)
+                t_score.append(t_score_1)
+                p_value.append(p_value_1)
+                file_location_regression.append(file_location_regression_1)
+
+                # dataframe4
+                predictor_name_df4.append(predictor_name_4)
+                file_weight_link.append(file_weight_1)
+                file_unweight_link.append(file_unweight_1)
+                file_location_diff_plot.append(file_location_diff_plot_1)
 
             else:
                 df[i] = labelencoder.fit_transform(df[i])
-                print(
-                    "Continous Response by Categorical Predictor: {} vs. {}".format(
-                        response[0], i
-                    )
-                )
-                cont_response_cat_predictor(
-                    df[response[0]], df[i], i, response[0]
-                )  # plot html
+                # print("Continous Response by Categorical Predictor: {} vs. {}".format(response[0], i))
+
+                (
+                    predictor_name_1,
+                    file_location_cont_cont_1,
+                ) = cont_response_cat_predictor(df[response[0]], df[i], i, response[0])
+                (
+                    predictor_name_4,
+                    file_weight_1,
+                    file_unweight_1,
+                    file_location_diff_plot_1,
+                ) = diff_mean_response(df[response[0]], df[i], len(set(df[i])), i)
+
+                # dataframe1
+                predictor_name_df1.append(predictor_name_1)
+                html_plot_file_location.append(file_location_cont_cont_1)
+
+                # dataframe4
+                predictor_name_df4.append(predictor_name_4)
+                file_weight_link.append(file_weight_1)
+                file_unweight_link.append(file_unweight_1)
+                file_location_diff_plot.append(file_location_diff_plot_1)
 
     else:
         df[response[0]] = labelencoder.fit_transform(df[response[0]])
         for i in predictors:
             if cont_bool(df[i]) == "continous":
                 cont_pred.append(i)
-                print(
-                    "Categorical Response by Continous Predictor: {} vs. {}".format(
-                        response[0], i
-                    )
-                )
-                cat_response_cont_predictor(
+                # print("Categorical Response by Continous Predictor: {} vs. {}".format(response[0], i))
+                (
+                    predictor_name_1,
+                    file_location_cat_cont_1,
+                ) = cat_response_cont_predictor(
                     df[response[0]], df[i], i, response[0]
                 )  # plot html
-                t_score_1, p_value_1, file_location = plot_logistic(
+                (
+                    predictor_name_2,
+                    t_score_1,
+                    p_value_1,
+                    file_location_regression_1,
+                ) = plot_logistic(
                     df[response[0]], df[i], i, response[0]
                 )  # logictic regression plot html, p-value, t-score
-                t_score.append(t_score_1)
-                p_value.append(p_value_1)
                 pred_out, importance = random_forest_ranking(
                     df[cont_pred], df[response[0]]
-                )  # Random Forest Ranking Dataframe and plot
+                )
+                (
+                    predictor_name_4,
+                    file_weight_1,
+                    file_unweight_1,
+                    file_location_diff_plot_1,
+                ) = diff_mean_response(df[response[0]], df[i], 10, i)
+
+                # dataframe1
+                predictor_name_df1.append(predictor_name_1)
+                html_plot_file_location.append(file_location_cat_cont_1)
+
+                # dataframe2
+                predictor_name_df2.append(predictor_name_2)
+                t_score.append(t_score_1)
+                p_value.append(p_value_1)
+                file_location_regression.append(file_location_regression_1)
+
+                # dataframe4
+                predictor_name_df4.append(predictor_name_4)
+                file_weight_link.append(file_weight_1)
+                file_unweight_link.append(file_unweight_1)
+                file_location_diff_plot.append(file_location_diff_plot_1)
 
             else:
-                print(
-                    "Categorical Response by Categorical Predictor: {} vs. {}".format(
-                        response[0], i
-                    )
-                )
-                cat_response_cat_predictor(
+                # print("Categorical Response by Categorical Predictor: {} vs. {}".format(response[0], i))
+                predictor_name_1, file_location_cat_cat_1 = cat_response_cat_predictor(
                     df[response[0]], df[i], i, response[0]
                 )  # plot html
+                (
+                    predictor_name_4,
+                    file_weight_1,
+                    file_unweight_1,
+                    file_location_diff_plot_1,
+                ) = diff_mean_response(df[response[0]], df[i], len(set(df[i])), i)
+
+                # dataframe1
+                predictor_name_df1.append(predictor_name_1)
+                html_plot_file_location.append(file_location_cat_cat_1)
+
+                # dataframe4
+                predictor_name_df4.append(predictor_name_4)
+                file_weight_link.append(file_weight_1)
+                file_unweight_link.append(file_unweight_1)
+                file_location_diff_plot.append(file_location_diff_plot_1)
+
+    # Dataframe 1
+    df1 = pd.DataFrame(
+        {"PredictorName": predictor_name_df1, "Plot": html_plot_file_location}
+    )
+
+    # Dataframe 2
+    df2 = pd.DataFrame(
+        {
+            "PredictorName": predictor_name_df2,
+            "RegressionPlot": file_location_regression,
+            "p-value": p_value,
+            "t-score": t_score,
+        }
+    )
+
+    # Dataframe 3
+    df3 = pd.DataFrame({"PredictorName": pred_out, "Importance": importance})
+
+    # Dataframe 4
+    df4 = pd.DataFrame(
+        {
+            "PredictorName": predictor_name_df4,
+            "MWR_Unweighted": file_unweight_link,
+            "MWR_Weighted": file_weight_link,
+            "MWR_plot_link": file_location_diff_plot,
+        }
+    )
+
+    outer_merged_1 = pd.merge(df1, df2, how="outer", on=["PredictorName"])
+    outer_merged_2 = pd.merge(df3, df4, how="outer", on=["PredictorName"])
+    df_completed = pd.merge(
+        outer_merged_1, outer_merged_2, how="outer", on=["PredictorName"]
+    )
+
+    print(df_completed)
 
 
 if __name__ == "__main__":
