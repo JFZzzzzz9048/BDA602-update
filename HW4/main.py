@@ -1,12 +1,12 @@
-# import os
+import os
 
 # my def main() also not work, so i just gave up use main()
-# import sys
+import sys
+import webbrowser
 
 import numpy as np
 import pandas as pd
 import statsmodels.api
-from IPython.display import HTML
 from plotly import express as px
 from plotly import graph_objects as go
 from scipy import stats
@@ -29,10 +29,9 @@ createFolder("./plots/")
 createFolder("./dataframes/")
 """
 
-rootpath = (
-    "/Users/jingfei/Dropbox/Mac (2)/Documents/GitHub/JingfeiZhang.Github.io/plots"
-)
-urlpath = "https://JingfeiZhang.Github.io/plots"
+# rootpath = "/Users/jingfei/Dropbox/Mac (2)/Documents/GitHub/BDA_HW_plot/plots"
+rootpath = os.path.dirname(sys.argv[0])
+urlpath = "https://jfzzzzzz9048.github.io/BDA_HW_plot/plots"
 
 
 # build a function to clean dataframe
@@ -113,7 +112,7 @@ def cat_response_cat_predictor(
         include_plotlyjs="cdn",
     )
 
-    return "{}_(Categorical)".format(predictor_name), url_location
+    return "{}_Categorical".format(predictor_name), url_location
 
 
 # Build a function to plot Categorical Response by Continous Predictor
@@ -167,7 +166,7 @@ def cat_response_cont_predictor(
         f.write(violin.to_html(full_html=False, include_plotlyjs="cdn"))
         f.write(hist.to_html(full_html=False, include_plotlyjs="cdn"))
 
-    return "{}_(Continous)".format(predictor_name), url_location
+    return "{}_Continous".format(predictor_name), url_location
 
 
 # Build a function to plot Continous Response by Categorical Predictor
@@ -221,7 +220,7 @@ def cont_response_cat_predictor(
         f.write(violin.to_html(full_html=False, include_plotlyjs="cdn"))
         f.write(hist.to_html(full_html=False, include_plotlyjs="cdn"))
 
-    return "{}_(Categorical)".format(predictor_name), url_location
+    return "{}_Categorical".format(predictor_name), url_location
 
 
 # Build a function to plot Continous Response by Continous Predictor
@@ -261,7 +260,7 @@ def cont_response_cont_predictor(
         file=file_location,
         include_plotlyjs="cdn",
     )
-    return "{}_(Continous)".format(predictor_name), url_location
+    return "{}_Continous".format(predictor_name), url_location
 
 
 # Perform a linear Regression and return p-value and t-score
@@ -296,7 +295,7 @@ def plot_linear(cont_response, cont_predictor, predictor_name, response_name):
         file=file_location,
         include_plotlyjs="cdn",
     )
-    return "{}_(Continous)".format(predictor_name), t_value, p_value, url_location
+    return "{}_Continous".format(predictor_name), t_value, p_value, url_location
 
 
 # Perform a logistic regression and return p-value and t-score
@@ -331,7 +330,7 @@ def plot_logistic(cat_response, cont_predictor, predictor_name, response_name):
         file=file_location,
         include_plotlyjs="cdn",
     )
-    return "{}_(Continous)".format(predictor_name), t_value, p_value, url_location
+    return "{}_Continous".format(predictor_name), t_value, p_value, url_location
 
 
 # Random Forest and Ranking
@@ -348,7 +347,7 @@ def random_forest_ranking(df_cont_pred, response):
     # plt.barh(X.columns[sorted_idx], rf.feature_importances_[sorted_idx])
     # plt.xlabel("Random Forest Feature Importance")
     for i in X.columns[-sorted_idx]:
-        output.append(i + "_(Continous)")
+        output.append(i + "_Continous")
     # print(output)
     return output, rf.feature_importances_[-sorted_idx]
 
@@ -358,9 +357,9 @@ def random_forest_ranking(df_cont_pred, response):
 def diff_mean_response(response_list, predictor_list, binNum, predictor_name):
     labelencoder = LabelEncoder()
     if predictor_name in cont_pred:
-        predictor_name = predictor_name + "_(Continous)"
+        predictor_name = predictor_name + "_Continous"
     else:
-        predictor_name = predictor_name + "_(Categorical)"
+        predictor_name = predictor_name + "_Categorical"
 
     file_location = "%s/%s_difference_mean_plot.html" % (rootpath, predictor_name)
     url_location = "%s/%s_difference_mean_plot.html" % (urlpath, predictor_name)
@@ -666,4 +665,14 @@ df_completed = pd.merge(
 )
 print(df_completed)
 
-HTML(df_completed.to_html(classes="table table-stripped"))
+final_report_url = "%s/report.html" % (urlpath)
+final_report_file = "%s/report.html" % (rootpath)
+
+df_completed.to_html(
+    final_report_file,
+    classes="table table-striped",
+    escape=False,
+    render_links=True,
+)
+# print(final_report_url)
+webbrowser.open(final_report_url)
