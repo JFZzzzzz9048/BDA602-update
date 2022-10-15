@@ -113,7 +113,7 @@ def cat_response_cat_predictor(
         include_plotlyjs="cdn",
     )
 
-    return "{} (Categorical)".format(predictor_name), url_location
+    return "{}_(Categorical)".format(predictor_name), url_location
 
 
 # Build a function to plot Categorical Response by Continous Predictor
@@ -167,7 +167,7 @@ def cat_response_cont_predictor(
         f.write(violin.to_html(full_html=False, include_plotlyjs="cdn"))
         f.write(hist.to_html(full_html=False, include_plotlyjs="cdn"))
 
-    return "{} (Continous)".format(predictor_name), url_location
+    return "{}_(Continous)".format(predictor_name), url_location
 
 
 # Build a function to plot Continous Response by Categorical Predictor
@@ -221,7 +221,7 @@ def cont_response_cat_predictor(
         f.write(violin.to_html(full_html=False, include_plotlyjs="cdn"))
         f.write(hist.to_html(full_html=False, include_plotlyjs="cdn"))
 
-    return "{} (Categorical)".format(predictor_name), url_location
+    return "{}_(Categorical)".format(predictor_name), url_location
 
 
 # Build a function to plot Continous Response by Continous Predictor
@@ -261,7 +261,7 @@ def cont_response_cont_predictor(
         file=file_location,
         include_plotlyjs="cdn",
     )
-    return "{} (Continous)".format(predictor_name), url_location
+    return "{}_(Continous)".format(predictor_name), url_location
 
 
 # Perform a linear Regression and return p-value and t-score
@@ -296,7 +296,7 @@ def plot_linear(cont_response, cont_predictor, predictor_name, response_name):
         file=file_location,
         include_plotlyjs="cdn",
     )
-    return "{} (Continous)".format(predictor_name), t_value, p_value, url_location
+    return "{}_(Continous)".format(predictor_name), t_value, p_value, url_location
 
 
 # Perform a logistic regression and return p-value and t-score
@@ -331,7 +331,7 @@ def plot_logistic(cat_response, cont_predictor, predictor_name, response_name):
         file=file_location,
         include_plotlyjs="cdn",
     )
-    return "{} (Continous)".format(predictor_name), t_value, p_value, url_location
+    return "{}_(Continous)".format(predictor_name), t_value, p_value, url_location
 
 
 # Random Forest and Ranking
@@ -348,7 +348,7 @@ def random_forest_ranking(df_cont_pred, response):
     # plt.barh(X.columns[sorted_idx], rf.feature_importances_[sorted_idx])
     # plt.xlabel("Random Forest Feature Importance")
     for i in X.columns[-sorted_idx]:
-        output.append(i + " (Continous)")
+        output.append(i + "_(Continous)")
     # print(output)
     return output, rf.feature_importances_[-sorted_idx]
 
@@ -358,9 +358,9 @@ def random_forest_ranking(df_cont_pred, response):
 def diff_mean_response(response_list, predictor_list, binNum, predictor_name):
     labelencoder = LabelEncoder()
     if predictor_name in cont_pred:
-        predictor_name = predictor_name + " (Continous)"
+        predictor_name = predictor_name + "_(Continous)"
     else:
-        predictor_name = predictor_name + " (Categorical)"
+        predictor_name = predictor_name + "_(Categorical)"
 
     file_location = "%s/%s_difference_mean_plot.html" % (rootpath, predictor_name)
     url_location = "%s/%s_difference_mean_plot.html" % (urlpath, predictor_name)
@@ -668,6 +668,5 @@ df_completed = pd.merge(
     outer_merged_1, outer_merged_2, how="outer", on=["PredictorName"]
 )
 print(df_completed)
-
 
 HTML(df_completed.to_html(classes="table table-stripped"))
