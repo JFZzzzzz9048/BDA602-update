@@ -10,7 +10,7 @@ from sklearn.metrics import confusion_matrix
 def cat_response_cat_predictor(
     cat_response, cat_predictor, predictor_name, response_name
 ):
-    file_location = "plots/categorical_{}_categorical_{}_heatmap_plot.html".format(
+    file_location = "categorical_{}_categorical_{}_heatmap_plot.html".format(
         response_name, predictor_name
     )
 
@@ -44,7 +44,7 @@ def cat_response_cat_predictor(
     # fig_no_relationship.show()
 
     fig_no_relationship.write_html(
-        file=file_location,
+        file="plots/" + file_location,
         include_plotlyjs="cdn",
     )
 
@@ -56,15 +56,13 @@ def cat_response_cont_predictor(
     cat_response, cont_predictor, predictor_name, response_name
 ):
     file_location_cat_cont_violin = (
-        "plots/continous_{}_categorical_{}_violin_plot.html".format(
+        "continous_{}_categorical_{}_violin_plot.html".format(
             response_name, predictor_name
         )
     )
 
-    file_location_cat_cont_dist = (
-        "plots/continous_{}_categorical_{}_dist_plot.html".format(
-            response_name, predictor_name
-        )
+    file_location_cat_cont_dist = "continous_{}_categorical_{}_dist_plot.html".format(
+        response_name, predictor_name
     )
 
     # Group data together
@@ -81,7 +79,7 @@ def cat_response_cont_predictor(
     )
     violin.update_xaxes(title_text=response_name)
     violin.update_yaxes(title_text=predictor_name)
-    violin.show()
+    # violin.show()
 
     # Distribution plot
     hist = px.histogram(
@@ -97,10 +95,10 @@ def cat_response_cont_predictor(
     )
     # hist.show()
 
-    with open(file_location_cat_cont_violin, "a") as f:
+    with open("plots/" + file_location_cat_cont_violin, "a") as f:
         f.write(violin.to_html(full_html=False, include_plotlyjs="cdn"))
 
-    with open(file_location_cat_cont_dist, "a") as f:
+    with open("plots/" + file_location_cat_cont_dist, "a") as f:
         f.write(hist.to_html(full_html=False, include_plotlyjs="cdn"))
 
     return predictor_name, file_location_cat_cont_violin, file_location_cat_cont_dist
@@ -110,7 +108,7 @@ def cat_response_cont_predictor(
 def cont_response_cont_predictor(
     cont_response, cont_predictor, predictor_name, response_name
 ):
-    file_location = "plots/continous_{}_countinous_{}_plot.html".format(
+    file_location = "continous_{}_countinous_{}_plot.html".format(
         response_name, predictor_name
     )
 
@@ -131,7 +129,7 @@ def cont_response_cont_predictor(
     # scatter.show()
 
     scatter.write_html(
-        file=file_location,
+        file="plots/" + file_location,
         include_plotlyjs="cdn",
     )
     return predictor_name, file_location
@@ -139,7 +137,7 @@ def cont_response_cont_predictor(
 
 # Perform a linear Regression and return p-value and t-score
 def plot_linear(cont_response, cont_predictor, predictor_name, response_name):
-    file_location = "plots/{}_{}_linear_regression_plot.html".format(
+    file_location = "{}_{}_linear_regression_plot.html".format(
         predictor_name, response_name
     )
     y = np.array(cont_response)
@@ -164,7 +162,7 @@ def plot_linear(cont_response, cont_predictor, predictor_name, response_name):
     # fig.show()
 
     fig.write_html(
-        file=file_location,
+        file="plots/" + file_location,
         include_plotlyjs="cdn",
     )
     return predictor_name, t_value, p_value, file_location

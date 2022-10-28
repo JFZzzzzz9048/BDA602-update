@@ -1,14 +1,14 @@
-import os as os
+import os
+import webbrowser
 from itertools import combinations, product
 
+# import sys
 import data_process
 import dataset_loader
 import matplotlib
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plots
-import seaborn as sns
 from cat_correlation import (
     cat_cont_correlation_ratio,
     cat_correlation,
@@ -30,14 +30,13 @@ def createFolder(directory):
 
 
 createFolder("./plots/")
-createFolder("./htmls/")
 
 
 def diff_mean_response_2d(pred1, pred2, response, binNum, pred1_name, pred2_name):
-    file_location_bin = "plots/{}_{}_difference_mean_bin_plot.html".format(
+    file_location_bin = "{}_{}_difference_mean_bin_plot.html".format(
         pred1_name, pred2_name
     )
-    file_location_residual = "plots/{}_{}_difference_mean_residual_plot.html".format(
+    file_location_residual = "{}_{}_difference_mean_residual_plot.html".format(
         pred1_name, pred2_name
     )
 
@@ -87,13 +86,13 @@ def diff_mean_response_2d(pred1, pred2, response, binNum, pred1_name, pred2_name
     fig_residual.show()
 
     fig_bin.write_html(
-        file=file_location_bin,
+        file="plots/" + file_location_bin,
         include_plotlyjs="cdn",
         include_mathjax="cdn",
     )
 
     fig_residual.write_html(
-        file=file_location_residual,
+        file="plots/" + file_location_residual,
         include_plotlyjs="cdn",
         include_mathjax="cdn",
     )
@@ -106,17 +105,27 @@ def diff_mean_response_2d(pred1, pred2, response, binNum, pred1_name, pred2_name
     )
 
 
+# Reference:
+# https://www.geeksforgeeks.org/how-to-create-a-table-with-clickable-hyperlink-to-a-local-file-in-pandas/
+def fun(path):
+    # returns the final component of a url
+    f_url = os.path.basename(path)
+    # convert the url into link
+    return '<a href="{}">{}</a>'.format(path, f_url)
+
+
 """
 def main():
-    df, predictors, response = dataset_loader.get_test_data_set("titanic")
-    print(df)
-    print(predictors)
-    print(response)
+
 
 
 if __name__ == "__main__":
     sys.exit(main())
 """
+
+rootpath = os.getcwd()
+urlpath = f"file:///{rootpath}/plots/final_report.html"
+# print(urlpath)
 
 cont_pred = []
 cat_pred = []
@@ -177,6 +186,12 @@ for cont_cont in combinations(cont_pred, 2):
 
 
 # Correlation Table:
+final_report_link = "plots/final_report.html"
+corr_df_link = []
+corr_df_predictor = []
+corr_df_predictor.append("Continous/Continous Correlation")
+cont_cont_corr_link = "cont_cont_corr_heatmap.html"
+corr_df_link.append(cont_cont_corr_link)
 cont_cont_correlation = pd.DataFrame(
     {
         "Predictors": predictors_column,
@@ -190,12 +205,26 @@ cont_cont_correlation = cont_cont_correlation.sort_values(
     by=["Absolute Value of Correlation"], ascending=False
 )
 
-print(cont_cont_correlation)
+cont_cont_correlation_heatmap = go.Figure(
+    data=go.Heatmap(
+        z=df[cont_pred].corr(method="pearson").to_numpy(),
+        x=list(set(cont_pred)),
+        y=list(set(cont_pred)),
+        hoverongaps=False,
+        zmin=0,
+        zmax=df[cont_pred].corr(method="pearson").to_numpy().max(),
+    )
+)
 
-fig = plt.figure(figsize=(15, 10))
-sns.heatmap(df[cont_pred].corr(method="pearson"), annot=True, cmap="Blues")
-plt.title("Correlation Heatmap")
-# fig.show()
+cont_cont_correlation_heatmap.update_layout(
+    title="Categorical/Categorical Correlation Heatmap"
+)
+
+# cont_cont_correlation_heatmap.show()
+
+cont_cont_correlation_heatmap.write_html(
+    file="plots/" + cont_cont_corr_link, include_plotlyjs="cdn"
+)
 
 
 # Brute Force Table:
@@ -206,14 +235,14 @@ cont_cont_brute = pd.DataFrame(
         "Difference of Mean Response": diff_mean,
         "Weighted Difference of Mean Response": weighted_diff_mean,
         "Bin Plot": cont_cont_bin_link,
-        "Redisual Plot": cont_cont_residual_link,
+        "Residual Plot": cont_cont_residual_link,
     }
 )
 
 cont_cont_brute = cont_cont_brute.sort_values(
     by=["Weighted Difference of Mean Response"], ascending=False
 )
-print(cont_cont_brute)
+# print(cont_cont_brute)
 
 
 # Categorical & Categorical
@@ -276,7 +305,7 @@ cat_cat_correlation = pd.DataFrame(
 cat_cat_correlation = cat_cat_correlation.sort_values(
     by=["Absolute Value of Correlation"], ascending=False
 )
-print(cat_cat_correlation)
+# print(cat_cat_correlation)
 
 
 # Correlation Matrix
@@ -311,14 +340,33 @@ cat_cat_final_matrix = cat_cat_final_matrix.pivot(
 )
 s2 = cat_cat_final_matrix.T
 cat_cat_final_matrix = cat_cat_final_matrix.fillna(s2)
-print(cat_cat_final_matrix)
+# print(cat_cat_final_matrix)
 
 # Correlation Plot
-fig1 = plt.figure(figsize=(15, 10))
-sns.heatmap(cat_cat_final_matrix, annot=True, cmap="Blues")
-plt.title("Categorical-Categorical Correlation Heatmap")
-# fig.show()
+corr_df_predictor.append("Categorical/Categorical Correlation")
+cat_cat_corr_link = "cat_cat_corr_heatmap.html"
+corr_df_link.append(cat_cat_corr_link)
 
+cat_cat_correlation_heatmap = go.Figure(
+    data=go.Heatmap(
+        z=cat_cat_final_matrix.to_numpy(),
+        x=list(set(cat_predictor1)),
+        y=list(set(cat_predictor1)),
+        hoverongaps=False,
+        zmin=0,
+        zmax=cat_cat_final_matrix.to_numpy().max(),
+    )
+)
+
+cat_cat_correlation_heatmap.update_layout(
+    title="Categorical/Categorical Correlation Heatmap"
+)
+
+cat_cat_correlation_heatmap.show()
+
+cat_cat_correlation_heatmap.write_html(
+    file="plots/" + cat_cat_corr_link, include_plotlyjs="cdn"
+)
 
 # Brute Force Table:
 cat_cat_brute = pd.DataFrame(
@@ -328,7 +376,7 @@ cat_cat_brute = pd.DataFrame(
         "Difference of Mean Response": cat_cat_diff_mean,
         "Weighted Difference of Mean Response": cat_cat_weighted_diff_mean,
         "Bin Plot": cat_cat_bin_link,
-        "Residual": cat_cat_redidual_link,
+        "Residual Plot": cat_cat_redidual_link,
     }
 )
 
@@ -336,7 +384,7 @@ cat_cat_brute = cat_cat_brute.sort_values(
     by=["Weighted Difference of Mean Response"], ascending=False
 )
 
-print(cat_cat_brute)
+# print(cat_cat_brute)
 
 
 # Continous & Categorical
@@ -407,7 +455,7 @@ cont_cat_correlation = pd.DataFrame(
 cont_cat_correlation = cont_cat_correlation.sort_values(
     by=["Absolute Value of Correlation"], ascending=False
 )
-print(cont_cat_correlation)
+# print(cont_cat_correlation)
 
 
 # Correlation Matrix
@@ -423,15 +471,34 @@ cont_cat_matrix = cont_cat_matrix.pivot(
     index="Predictor1", columns="Predictor2", values="Correlation Ratio"
 )
 
-print(cont_cat_matrix)
+# print(cont_cat_matrix)
 
 
 # Correlation Plot
-fig2 = plt.figure(figsize=(15, 10))
-sns.heatmap(cont_cat_matrix, annot=True, cmap="Blues")
-plt.title("Continous-Categorical Correlation Heatmap")
-# fig.show()
+corr_df_predictor.append("Continous/Categorical Correlation")
+cont_cat_corr_link = "cont_cat_corr_heatmap.html"
+corr_df_link.append(cont_cat_corr_link)
 
+cont_cat_correlation_heatmap = go.Figure(
+    data=go.Heatmap(
+        z=cont_cat_matrix.to_numpy(),
+        x=list(set(cat_predictor2)),
+        y=list(set(cont_predictor1)),
+        hoverongaps=False,
+        zmin=0,
+        zmax=cont_cat_matrix.to_numpy().max(),
+    )
+)
+
+cont_cat_correlation_heatmap.update_layout(
+    title="Continous/Categorical Correlation Heatmap"
+)
+
+cont_cat_correlation_heatmap.show()
+
+cont_cat_correlation_heatmap.write_html(
+    file="plots/" + cont_cat_corr_link, include_plotlyjs="cdn"
+)
 
 # Brute Force Table:
 cont_cat_brute = pd.DataFrame(
@@ -449,11 +516,67 @@ cont_cat_brute = cont_cat_brute.sort_values(
     by=["Weighted Difference of Mean Response"], ascending=False
 )
 
-print(cont_cat_brute)
+# print(cont_cat_brute)
 
-"""
-with open("htmls/correlation_matricies.html", "a") as f:
-    f.write(fig.to_html(full_html=False, include_plotlyjs="cdn"))
-    f.write(fig1.to_html(full_html=False, include_plotlyjs="cdn"))
-    f.write(fig2.to_html(full_html=False, include_plotlyjs="cdn"))
-"""
+df_correlation_matricies = pd.DataFrame(
+    {
+        "Predictor1/Predictor2": corr_df_predictor,
+        "Correlation Heatmap Link": corr_df_link,
+    }
+)
+
+
+df_correlation_matricies = df_correlation_matricies.style.format(
+    {"Correlation Heatmap Link": fun}
+)
+cont_cont_correlation = cont_cont_correlation.style.format(
+    {"Linear Regression Plot": fun}
+)
+cat_cat_correlation = cat_cat_correlation.style.format({"Heatmap": fun})
+cont_cat_correlation = cont_cat_correlation.style.format(
+    {"Violin Plot": fun, "Distribution Plot": fun}
+)
+cont_cont_brute = cont_cont_brute.style.format({"Bin Plot": fun, "Residual Plot": fun})
+cat_cat_brute = cat_cat_brute.style.format({"Bin Plot": fun, "Residual Plot": fun})
+cont_cat_brute = cont_cat_brute.style.format({"Bin Plot": fun, "Residual Plot": fun})
+
+
+with open(final_report_link, "w") as f:
+    f.write(
+        "--------Correlation Matricies Table-------\n"
+        + df_correlation_matricies.to_html()
+        + "\n\n"
+    )
+    f.write("\n\n")
+    f.write(
+        "\n-------Continous/Continous Correlation Table-------\n"
+        + cont_cont_correlation.to_html()
+        + "\n\n"
+    )
+    f.write("\n\n")
+    f.write(
+        "\n-------Continous/Continous Brute Table-------\n" + cont_cont_brute.to_html()
+    )
+    f.write("\n\n")
+    f.write(
+        "-------Categorical/Categorical Correlation Table-------\n"
+        + cat_cat_correlation.to_html()
+    )
+    f.write("\n\n")
+    f.write(
+        "-------Categorical/Categorical Brute Table-------\n" + cat_cat_brute.to_html()
+    )
+    f.write("\n\n")
+    f.write(
+        "-------Continous/Categorical Correlation Table-------\n"
+        + cont_cat_correlation.to_html()
+    )
+    f.write("\n\n")
+    f.write(
+        "-------Continous/Categorical Brute Table-------\n" + cont_cat_brute.to_html()
+    )
+    f.write("\n\n")
+
+    f.close()
+
+webbrowser.open(urlpath)
