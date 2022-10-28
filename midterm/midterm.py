@@ -14,6 +14,7 @@ from cat_correlation import (
     cat_correlation,
     con_con_correlation,
 )
+from plotly import graph_objects as go
 from scipy import stats
 from sklearn.preprocessing import LabelEncoder
 
@@ -29,9 +30,17 @@ def createFolder(directory):
 
 
 createFolder("./plots/")
+createFolder("./htmls/")
 
 
-def diff_mean_response_2d(pred1, pred2, response, binNum):
+def diff_mean_response_2d(pred1, pred2, response, binNum, pred1_name, pred2_name):
+    file_location_bin = "plots/{}_{}_difference_mean_bin_plot.html".format(
+        pred1_name, pred2_name
+    )
+    file_location_residual = "plots/{}_{}_difference_mean_residual_plot.html".format(
+        pred1_name, pred2_name
+    )
+
     hist, x1bins, x2bins = np.histogram2d(pred1, pred2, bins=binNum)
     bin_means, binx_edges, biny_edges, binnumber = stats.binned_statistic_2d(
         pred1, pred2, response, statistic="mean", bins=[x1bins, x2bins], range=None
@@ -45,9 +54,56 @@ def diff_mean_response_2d(pred1, pred2, response, binNum):
     mean_sqr_diff_weight = mean_sqr_diff * population_prop
 
     weight_mean_square_difference = np.nansum(mean_sqr_diff_weight)
-    mean_square_difference = np.nanmean(mean_sqr_diff_weight)
+    mean_square_difference = np.nanmean(mean_sqr_diff)
 
-    return mean_square_difference, weight_mean_square_difference
+    z1 = bin_means
+    z2 = bin_means - population_prop
+
+    fig_bin = go.Figure(
+        data=go.Heatmap(
+            z=z1, x=x1bins, y=x2bins, hoverongaps=False, zmin=0, zmax=z1.max()
+        )
+    )
+
+    fig_bin.update_layout(
+        title=f"{pred1_name} by {pred2_name} Bin Plot",
+        xaxis_title=pred1_name,
+        yaxis_title=pred2_name,
+    )
+
+    fig_residual = go.Figure(
+        data=go.Heatmap(
+            z=z2, x=x1bins, y=x2bins, hoverongaps=False, zmin=0, zmax=z2.max()
+        )
+    )
+
+    fig_residual.update_layout(
+        title=f"{pred1_name} by {pred2_name} Residual Plot",
+        xaxis_title=pred1_name,
+        yaxis_title=pred2_name,
+    )
+
+    fig_bin.show()
+    fig_residual.show()
+
+    fig_bin.write_html(
+        file=file_location_bin,
+        include_plotlyjs="cdn",
+        include_mathjax="cdn",
+    )
+
+    fig_residual.write_html(
+        file=file_location_residual,
+        include_plotlyjs="cdn",
+        include_mathjax="cdn",
+    )
+
+    return (
+        mean_square_difference,
+        weight_mean_square_difference,
+        file_location_bin,
+        file_location_residual,
+    )
 
 
 """
@@ -85,6 +141,8 @@ predictor1 = []
 predictor2 = []
 diff_mean = []
 weighted_diff_mean = []
+cont_cont_bin_link = []
+cont_cont_residual_link = []
 
 for cont_cont in combinations(cont_pred, 2):
     predictor_str = str(cont_cont[0]) + " and " + str(cont_cont[1])
@@ -104,11 +162,19 @@ for cont_cont in combinations(cont_pred, 2):
     )
     cont_cont_linear_plot_link.append(file_location)
 
-    diff_mean_value, weighted_diff_mean_value = diff_mean_response_2d(
-        df[cont_cont[0]], df[cont_cont[1]], df[response], 10
+    (
+        diff_mean_value,
+        weighted_diff_mean_value,
+        cont_cont_bin,
+        cont_cont_residual,
+    ) = diff_mean_response_2d(
+        df[cont_cont[0]], df[cont_cont[1]], df[response], 5, cont_cont[0], cont_cont[1]
     )
     diff_mean.append(diff_mean_value)
     weighted_diff_mean.append(weighted_diff_mean_value)
+    cont_cont_bin_link.append(cont_cont_bin)
+    cont_cont_residual_link.append(cont_cont_residual)
+
 
 # Correlation Table:
 cont_cont_correlation = pd.DataFrame(
@@ -131,6 +197,7 @@ sns.heatmap(df[cont_pred].corr(method="pearson"), annot=True, cmap="Blues")
 plt.title("Correlation Heatmap")
 # fig.show()
 
+
 # Brute Force Table:
 cont_cont_brute = pd.DataFrame(
     {
@@ -138,7 +205,13 @@ cont_cont_brute = pd.DataFrame(
         "Predictor 2": predictor2,
         "Difference of Mean Response": diff_mean,
         "Weighted Difference of Mean Response": weighted_diff_mean,
+        "Bin Plot": cont_cont_bin_link,
+        "Redisual Plot": cont_cont_residual_link,
     }
+)
+
+cont_cont_brute = cont_cont_brute.sort_values(
+    by=["Weighted Difference of Mean Response"], ascending=False
 )
 print(cont_cont_brute)
 
@@ -152,6 +225,8 @@ cat_predictor1 = []
 cat_predictor2 = []
 cat_cat_diff_mean = []
 cat_cat_weighted_diff_mean = []
+cat_cat_bin_link = []
+cat_cat_redidual_link = []
 labelencoder = LabelEncoder()
 
 for cat_cat in combinations(cat_pred, 2):
@@ -169,14 +244,23 @@ for cat_cat in combinations(cat_pred, 2):
     )
     cat_cat_heatmap_link.append(cat_file_location)
 
-    cat_cat_diff_mean_value, cat_cat_weighted_diff_mean_value = diff_mean_response_2d(
+    (
+        cat_cat_diff_mean_value,
+        cat_cat_weighted_diff_mean_value,
+        cat_cat_bin,
+        cat_cat_residual,
+    ) = diff_mean_response_2d(
         labelencoder.fit_transform(df[cat_cat[0]]),
         labelencoder.fit_transform(df[cat_cat[1]]),
         df[response],
-        10,
+        5,
+        cat_cat[0],
+        cat_cat[1],
     )
     cat_cat_diff_mean.append(cat_cat_diff_mean_value)
     cat_cat_weighted_diff_mean.append(cat_cat_weighted_diff_mean_value)
+    cat_cat_bin_link.append(cat_cat_bin)
+    cat_cat_redidual_link.append(cat_cat_residual)
 
 
 # Correlation Table:
@@ -230,7 +314,7 @@ cat_cat_final_matrix = cat_cat_final_matrix.fillna(s2)
 print(cat_cat_final_matrix)
 
 # Correlation Plot
-fig = plt.figure(figsize=(15, 10))
+fig1 = plt.figure(figsize=(15, 10))
 sns.heatmap(cat_cat_final_matrix, annot=True, cmap="Blues")
 plt.title("Categorical-Categorical Correlation Heatmap")
 # fig.show()
@@ -243,8 +327,15 @@ cat_cat_brute = pd.DataFrame(
         "Predictor 2": cat_predictor2,
         "Difference of Mean Response": cat_cat_diff_mean,
         "Weighted Difference of Mean Response": cat_cat_weighted_diff_mean,
+        "Bin Plot": cat_cat_bin_link,
+        "Residual": cat_cat_redidual_link,
     }
 )
+
+cat_cat_brute = cat_cat_brute.sort_values(
+    by=["Weighted Difference of Mean Response"], ascending=False
+)
+
 print(cat_cat_brute)
 
 
@@ -258,6 +349,9 @@ cont_predictor1 = []
 cat_predictor2 = []
 cont_cat_diff_mean = []
 cont_cat_weighted_diff_mean = []
+cont_cat_bin_link = []
+cont_cat_residual_link = []
+labelencoder = LabelEncoder()
 
 for cont_predictor in cont_pred:
     for cat_predictor in cat_pred:
@@ -278,24 +372,28 @@ for cont_predictor in cont_pred:
         ) = plots.cat_response_cont_predictor(
             df[cat_predictor], df[cont_predictor], cat_predictor, cont_predictor
         )
-
         cont_cat_violin_link.append(file_location_cat_cont_violin)
         cont_cat_dist_link.append(file_location_cat_cont_dist)
 
         (
             cont_cat_diff_mean_value,
             cont_cat_weighted_diff_mean_value,
+            cont_cat_bin,
+            cont_cat_residual,
         ) = diff_mean_response_2d(
             df[cont_predictor],
             labelencoder.fit_transform(df[cat_predictor]),
             df[response],
-            10,
+            5,
+            cont_predictor,
+            cat_predictor,
         )
         cont_cat_diff_mean.append(cont_cat_diff_mean_value)
         cont_cat_weighted_diff_mean.append(cont_cat_weighted_diff_mean_value)
 
+        cont_cat_bin_link.append(cont_cat_bin)
+        cont_cat_residual_link.append(cont_cat_residual)
 
-# Correlation Table:
 cont_cat_correlation = pd.DataFrame(
     {
         "Predictors": cont_cat_predictors_column,
@@ -329,10 +427,11 @@ print(cont_cat_matrix)
 
 
 # Correlation Plot
-fig = plt.figure(figsize=(15, 10))
+fig2 = plt.figure(figsize=(15, 10))
 sns.heatmap(cont_cat_matrix, annot=True, cmap="Blues")
 plt.title("Continous-Categorical Correlation Heatmap")
 # fig.show()
+
 
 # Brute Force Table:
 cont_cat_brute = pd.DataFrame(
@@ -341,6 +440,20 @@ cont_cat_brute = pd.DataFrame(
         "Predictor 2": cat_predictor2,
         "Difference of Mean Response": cont_cat_diff_mean,
         "Weighted Difference of Mean Response": cont_cat_weighted_diff_mean,
+        "Bin Plot": cont_cat_bin_link,
+        "Residual Plot": cont_cat_residual_link,
     }
 )
+
+cont_cat_brute = cont_cat_brute.sort_values(
+    by=["Weighted Difference of Mean Response"], ascending=False
+)
+
 print(cont_cat_brute)
+
+"""
+with open("htmls/correlation_matricies.html", "a") as f:
+    f.write(fig.to_html(full_html=False, include_plotlyjs="cdn"))
+    f.write(fig1.to_html(full_html=False, include_plotlyjs="cdn"))
+    f.write(fig2.to_html(full_html=False, include_plotlyjs="cdn"))
+"""

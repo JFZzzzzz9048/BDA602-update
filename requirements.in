@@ -5,3 +5,4 @@ sklearn
 typing
 matplotlib
 scipy
+plotly
