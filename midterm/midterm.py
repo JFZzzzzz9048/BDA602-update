@@ -5,7 +5,8 @@ from itertools import combinations, product
 
 import data_process
 import dataset_loader
-import matplotlib
+
+# import matplotlib
 import numpy as np
 import pandas as pd
 import plots
@@ -18,7 +19,7 @@ from plotly import graph_objects as go
 from scipy import stats
 from sklearn.preprocessing import LabelEncoder
 
-matplotlib.use("TkAgg")
+# matplotlib.use("TkAgg")
 
 
 def createFolder(directory):
@@ -200,14 +201,42 @@ def main():
         by=["Absolute Value of Correlation"], ascending=False
     )
 
+    # Cont-Cont Correlation Matrix
+    # Let us split this list into two parts
+    cont_var1 = cont_pred
+    cont_var2 = cont_pred
+
+    # Creating all possible combinations between the above two variables list
+    cont_var_prod = list(product(cont_var1, cont_var2, repeat=1))
+
+    cont_cont_matrix = pd.DataFrame(
+        {"Predictor1": predictor1, "Predictor2": predictor2, "Pearson R": pearson_r}
+    )
+
+    cont_var_prod = pd.DataFrame(cont_var_prod, columns=["Predictor1", "Predictor2"])
+    cont_cont_final_matrix = pd.merge(
+        cont_var_prod, cont_cont_matrix, how="left", on=["Predictor1", "Predictor2"]
+    )
+    cont_cont_final_matrix.loc[
+        (cont_cont_final_matrix["Predictor1"] == cont_cont_final_matrix["Predictor2"]),
+        "Pearson R",
+    ] = 1
+
+    # Using pivot function to convert the above DataFrame into a crosstab
+    cont_cont_final_matrix = cont_cont_final_matrix.pivot(
+        index="Predictor1", columns="Predictor2", values="Pearson R"
+    )
+    s2 = cont_cont_final_matrix.T
+    cont_cont_final_matrix = cont_cont_final_matrix.fillna(s2)
+
     cont_cont_correlation_heatmap = go.Figure(
         data=go.Heatmap(
-            z=df[cont_pred].corr(method="pearson").to_numpy(),
-            x=list(set(cont_pred)),
-            y=list(set(cont_pred)),
+            z=cont_cont_final_matrix.to_numpy(),
+            x=list(cont_cont_final_matrix.index),
+            y=list(cont_cont_final_matrix.columns),
             hoverongaps=False,
             zmin=0,
-            zmax=df[cont_pred].corr(method="pearson").to_numpy().max(),
+            zmax=1,
         )
     )
 
@@ -342,11 +371,11 @@ def main():
     cat_cat_correlation_heatmap = go.Figure(
         data=go.Heatmap(
             z=cat_cat_final_matrix.to_numpy(),
-            x=list(set(cat_predictor1)),
-            y=list(set(cat_predictor1)),
+            x=list(cat_cat_final_matrix.index),
+            y=list(cat_cat_final_matrix.columns),
             hoverongaps=False,
             zmin=0,
-            zmax=cat_cat_final_matrix.to_numpy().max(),
+            zmax=1,
         )
     )
 
@@ -471,11 +500,11 @@ def main():
     cont_cat_correlation_heatmap = go.Figure(
         data=go.Heatmap(
             z=cont_cat_matrix.to_numpy(),
-            x=list(set(cat_predictor2)),
-            y=list(set(cont_predictor1)),
+            y=list(cont_cat_matrix.index),
+            x=list(cont_cat_matrix.columns),
             hoverongaps=False,
             zmin=0,
-            zmax=cont_cat_matrix.to_numpy().max(),
+            zmax=1,
         )
     )
 

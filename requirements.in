@@ -6,3 +6,4 @@ typing
 matplotlib
 scipy
 plotly
+statsmodels
