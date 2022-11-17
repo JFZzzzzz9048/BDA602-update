@@ -62,8 +62,8 @@ CREATE TEMPORARY TABLE IF NOT EXISTS pitcher_info AS
 	    ORDER BY A.game_id;
 
 
-DROP TEMPORARY TABLE IF EXISTS baseball_ready;
-CREATE TEMPORARY TABLE IF NOT EXISTS baseball_ready AS
+DROP TABLE IF EXISTS baseball_ready;
+CREATE TABLE IF NOT EXISTS baseball_ready AS
     SELECT A.*,
         B.home_runs,
         B.away_runs,
