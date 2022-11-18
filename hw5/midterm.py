@@ -13,6 +13,7 @@ from plotly import graph_objects as go
 from pyspark.sql import SparkSession
 from sklearn.preprocessing import LabelEncoder
 
+from hw5.build_model import model_df
 from hw5.difference_mean import (
     diff_mean_response,
     diff_mean_response_2d,
@@ -92,7 +93,11 @@ def main():
     predictors = list(df_baseball_1.columns)
     predictors.remove(response)
 
-    # df, predictors, response = dataset_loader.get_test_data_set("titanic")
+    # Build Model Performance Table
+    X = df_baseball_1.drop([response], axis=1)
+    y = df_baseball_1[response]
+    ml_df = model_df(X, y)
+
     df = data_process.clean_df(df_baseball_1)
 
     # Create continous predictors list & categorical predictors list
@@ -355,6 +360,8 @@ def main():
     )
 
     with open(final_report_link, "w") as f:
+        f.write("--------Model Performance Table-------\n" + ml_df.to_html() + "\n\n")
+        f.write("\n\n")
         f.write(
             "--------Continous Predictors Table-------\n"
             + df_cont_pred.to_html()
