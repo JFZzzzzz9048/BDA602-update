@@ -39,26 +39,30 @@ CREATE TEMPORARY TABLE IF NOT EXISTS away_batting AS
 	    ORDER BY game_id;
 
 
+
 DROP TEMPORARY TABLE IF EXISTS pitcher_info;
 CREATE TEMPORARY TABLE IF NOT EXISTS pitcher_info AS
     SELECT A.Game_ID,
         A.home_team_id,
         A.away_team_id,
-        A.home_inning,
-        A.home_PA,
-        A.home_AB,
-        A.home_hit,
-        A.home_walk,
-        A.home_strikeout,
-        B.away_inning,
-        B.away_PA,
-        B.away_AB,
-        B.away_hit,
-        B.away_walk,
-        B.away_strikeout
+        AVG(A.home_inning) AS home_inning,
+        AVG(A.home_PA) as home_PA,
+        AVG(A.home_AB) as home_AB,
+        AVG(A.home_hit) as home_hit,
+        SUM(A.home_hit)/SUM(A.home_AB) AS home_BA,
+        AVG(A.home_walk) as home_walk,
+        AVG(A.home_strikeout) AS home_strikeout,
+        AVG(B.away_inning) as away_inning,
+        AVG(B.away_PA) AS away_PA,
+        AVG(B.away_AB) AS away_AB,
+        AVG(B.away_hit) AS away_hit,
+        SUM(B.away_hit)/SUM(B.away_AB) AS away_BA,
+        AVG(B.away_walk) AS away_walk,
+        AVG(B.away_strikeout) AS away_strikeout
 	    FROM home_batting A
 	    JOIN away_batting B
 	    ON A.game_id = B.game_id
+        GROUP BY home_team_id
 	    ORDER BY A.game_id;
 
 
@@ -73,3 +77,66 @@ CREATE TABLE IF NOT EXISTS baseball_ready AS
 	    JOIN team_game_info B
 	    ON A.game_id = B.game_id
 	    ORDER BY A.game_id;
+
+SELECT * FROM baseball_ready
+LIMIT 20;
+
+
+
+---------------------------
+Home Starting Pitcher stats:
+DROP TEMPORARY TABLE IF EXISTS home_starting_pitcher_info;
+CREATE TEMPORARY TABLE IF NOT EXISTS home_starting_pitcher_info AS
+    select
+        game_id,
+        team_id as home_team_id,
+        AVG(endingInning - startingInning) AS home_sp_AVG_inning,
+        AVG(strikeout) as home_sp_AVG_strikeout,
+        SUM(Hit)/SUM(atBat) AS home_sp_AVG_ba
+    from  pitcher_counts
+    where homeTeam = 1 and startingPitcher = 1
+    group by team_id
+    order by game_id;
+
+SELECT * FROM home_starting_pitcher_info
+LIMIT 20;
+
+------------------------------
+Away Starting Pitcher stats:
+DROP TEMPORARY TABLE IF EXISTS away_starting_pitcher_info;
+CREATE TEMPORARY TABLE IF NOT EXISTS away_starting_pitcher_info AS
+    select
+        game_id,
+        team_id as away_team_id,
+        AVG(endingInning - startingInning) AS away_sp_AVG_inning,
+        AVG(strikeout) as away_sp_AVG_strikeout,
+        SUM(Hit)/SUM(atBat) AS away_sp_AVG_ba
+    from  pitcher_counts
+    where homeTeam = 0 and startingPitcher = 1
+    group by team_id
+    order by game_id;
+
+SELECT * FROM away_starting_pitcher_info
+LIMIT 20;
+
+
+
+------------------------------
+Starting Pitcher stats:
+DROP TEMPORARY TABLE IF EXISTS starting_pitcher_info;
+CREATE TEMPORARY TABLE IF NOT EXISTS starting_pitcher_info AS
+    SELECT
+        A.Game_ID,
+        A.home_sp_AVG_inning,
+        B.away_sp_AVG_inning,
+        A.home_sp_AVG_strikeout,
+        B.away_sp_AVG_strikeout,
+        A.home_sp_AVG_ba,
+        B.away_sp_AVG_ba
+	    FROM home_starting_pitcher_info A
+	    JOIN away_starting_pitcher_info B
+	    ON A.home_team_id = B.away_team_id
+	    ORDER BY A.game_id;
+
+SELECT * FROM starting_pitcher_info
+LIMIT 20;

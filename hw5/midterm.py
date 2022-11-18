@@ -92,7 +92,7 @@ def main():
     )
     predictors = list(df_baseball_1.columns)
     predictors.remove(response)
-
+    print(df_baseball_1.dtypes)
     # Build Model Performance Table
     X = df_baseball_1.drop([response], axis=1)
     y = df_baseball_1[response]
@@ -102,12 +102,15 @@ def main():
 
     # Create continous predictors list & categorical predictors list
     for i in predictors:
-        if data_process.cont_bool(df[i]) == "categorical":
+        if len(set(df[i])) >= 20:
+            df[i] = df[i].astype(float)
+            cont_pred.append(i)
+        elif data_process.cont_bool(df[i]) == "categorical":
             cat_pred.append(i)
         else:
             cont_pred.append(i)
 
-    # print(cont_pred)
+    print(cont_pred)
 
     # HW4 Table
     t_score = []
@@ -318,7 +321,7 @@ def main():
     )
 
     cont_cont_correlation_heatmap.update_layout(
-        title="Categorical/Categorical Correlation Heatmap"
+        title="Continous/Continous Correlation Heatmap"
     )
 
     # cont_cont_correlation_heatmap.show()
