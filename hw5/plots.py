@@ -166,3 +166,39 @@ def plot_linear(cont_response, cont_predictor, predictor_name, response_name):
         include_plotlyjs="cdn",
     )
     return predictor_name, t_value, p_value, file_location
+
+
+# Perform a logistic regression and return p-value and t-score
+def plot_logistic(cat_response, cont_predictor, predictor_name, response_name):
+
+    file_location = "{}_{}_linear_regression_plot.html".format(
+        predictor_name, response_name
+    )
+
+    y = cat_response.astype(float).to_numpy()
+    predictor = cont_predictor.fillna(0).to_numpy()
+
+    predictor1 = statsmodels.api.add_constant(predictor)
+    logistic_regression_model = statsmodels.api.Logit(y, predictor1)
+    logistic_regression_model = logistic_regression_model.fit()
+
+    # print(logistic_regression_model.summary())
+
+    t_value = round(logistic_regression_model.tvalues[1], 6)
+    p_value = "{:.6e}".format(logistic_regression_model.pvalues[1])
+
+    # Plot the figure
+    fig = px.scatter(x=predictor, y=y, trendline="ols")
+    fig.update_layout(
+        title=f"Variable: {predictor_name}: (t-value={t_value}) (p-value={p_value})",
+        xaxis_title="Variable: {}".format(predictor_name),
+        yaxis_title=response_name,
+    )
+    # fig.show()
+
+    fig.write_html(
+        file="plots/" + file_location,
+        include_plotlyjs="cdn",
+    )
+
+    return predictor_name, t_value, p_value, file_location
