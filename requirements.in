@@ -1,1 +1,9 @@
 numpy
+pandas
+seaborn
+sklearn
+typing
+matplotlib
+scipy
+plotly
+statsmodels
