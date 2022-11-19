@@ -137,12 +137,10 @@ def diff_mean_response_2d(pred1, pred2, response, binNum, pred1_name, pred2_name
     mean_square_difference = np.nanmean(mean_sqr_diff)
 
     z1 = bin_means
-    z2 = bin_means - population_prop
+    z2 = (bin_means - population_prop) * (bin_means - population_prop)
 
     fig_bin = go.Figure(
-        data=go.Heatmap(
-            z=z1, x=x1bins, y=x2bins, hoverongaps=False, zmin=0, zmax=z1.max()
-        )
+        data=go.Heatmap(z=z1, x=binx_edges, y=biny_edges, hoverongaps=True)
     )
 
     fig_bin.update_layout(
@@ -152,9 +150,7 @@ def diff_mean_response_2d(pred1, pred2, response, binNum, pred1_name, pred2_name
     )
 
     fig_residual = go.Figure(
-        data=go.Heatmap(
-            z=z2, x=x1bins, y=x2bins, hoverongaps=False, zmin=0, zmax=z2.max()
-        )
+        data=go.Heatmap(z=z2, x=x1bins, y=x2bins, hoverongaps=True)
     )
 
     fig_residual.update_layout(

@@ -156,8 +156,8 @@ def plot_linear(cont_response, cont_predictor, predictor_name, response_name):
     fig = px.scatter(x=predictor, y=y, trendline="ols")
     fig.update_layout(
         title=f"{predictor_name} vs. {response_name}: (t-value={t_value}) (p-value={p_value})",
-        xaxis_title="Variable: {}".format(predictor_name),
-        yaxis_title=response_name,
+        xaxis_title="Variable: {}".format(response_name),
+        yaxis_title=predictor_name,
     )
     # fig.show()
 
@@ -171,7 +171,7 @@ def plot_linear(cont_response, cont_predictor, predictor_name, response_name):
 # Perform a logistic regression and return p-value and t-score
 def plot_logistic(cat_response, cont_predictor, predictor_name, response_name):
 
-    file_location = "{}_{}_linear_regression_plot.html".format(
+    file_location = "{}_{}_logistic_regression_plot.html".format(
         predictor_name, response_name
     )
 

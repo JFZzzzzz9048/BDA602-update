@@ -3,7 +3,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
-from sklearn.tree import ExtraTreeRegressor
+from sklearn.naive_bayes import GaussianNB
 
 
 def model_df(X, y):
@@ -59,22 +59,23 @@ def model_df(X, y):
         "Test R2",
     ]
 
-    # 3. Extra Tree
-    et = ExtraTreeRegressor(random_state=42)
-    et.fit(X_train, y_train)
+    # 3. Navie Bayes
+    gnb = GaussianNB()
+    gnb.fit(X_train, y_train)
 
-    y_et_train_pred = et.predict(X_train)
-    y_et_test_pred = et.predict(X_test)
+    y_nb_train_pred = gnb.predict(X_train)
+    y_nb_test_pred = gnb.predict(X_test)
 
-    et_train_mse = mean_squared_error(y_train, y_et_train_pred)
-    et_train_r2 = r2_score(y_train, y_et_train_pred)
-    et_test_mse = mean_squared_error(y_test, y_et_test_pred)
-    et_test_r2 = r2_score(y_test, y_et_test_pred)
+    nb_train_mse = mean_squared_error(y_train, y_nb_train_pred)
+    nb_train_r2 = r2_score(y_train, y_nb_train_pred)
 
-    et_results = pd.DataFrame(
-        ["Extra Tree", et_train_mse, et_train_r2, et_test_mse, et_test_r2]
+    nb_test_mse = mean_squared_error(y_test, y_nb_test_pred)
+    nb_test_r2 = r2_score(y_test, y_nb_test_pred)
+
+    nb_results = pd.DataFrame(
+        ["Navie Bayes", nb_train_mse, nb_train_r2, nb_test_mse, nb_test_r2]
     ).transpose()
-    et_results.columns = [
+    nb_results.columns = [
         "Method",
         "Training MSE",
         "Training R2",
@@ -82,6 +83,25 @@ def model_df(X, y):
         "Test R2",
     ]
 
-    ml_df = pd.concat([lr_results, rf_results, et_results])
+    naive_bayes = gnb.fit(X_train, y_train)
+    nb_score = naive_bayes.score(X_test, y_test)
+    print("Accuracy for Navice Bayes: {}".format(nb_score))
+
+    linear_reg = lr.fit(X_train, y_train)
+    lr_score = linear_reg.score(X_test, y_test)
+    print("Accuracy for Linear Regression: {}".format(lr_score))
+
+    ml_df = pd.concat([lr_results, rf_results, nb_results])
+
+    # How to split train/test?
+    # Basically, we need to select a date then split the data to part 1: before the date, part2: after the date.
+    # Since my data set is order by game_id, from the oldest game to the lastest game. So, we can just split it by 20%,
+    # 80%.
+
+    # Which model is better?
+    # Random Forest is better than linear regression because Random Forest has a higher R-squared and lower MSE.
+    # It is strange, when I got Navies Bayes score is greater than Linear Regression. However, NB's R-Squared is
+    # negative, which means the variance is extremely large. Overall, I would say Random Forest is the best among these
+    # three models.
 
     return ml_df

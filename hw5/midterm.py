@@ -44,8 +44,10 @@ def fun(path):
 
 
 def main():
+    labelencoder = LabelEncoder()
     rootpath = os.getcwd()
-    urlpath = f"file:///{rootpath}/plots/final_report.html"
+    urlpath = f"file://{rootpath}/plots/hw5_final_report.html"
+    # print(rootpath)
     # print(urlpath)
 
     cont_pred = []
@@ -95,7 +97,7 @@ def main():
     print(df_baseball_1.dtypes)
     # Build Model Performance Table
     X = df_baseball_1.drop([response], axis=1)
-    y = df_baseball_1[response]
+    y = labelencoder.fit_transform(df_baseball_1[response])
     ml_df = model_df(X, y)
 
     df = data_process.clean_df(df_baseball_1)
@@ -110,7 +112,7 @@ def main():
         else:
             cont_pred.append(i)
 
-    print(cont_pred)
+    # print(cont_pred)
 
     # HW4 Table
     t_score = []
@@ -124,7 +126,6 @@ def main():
     file_weight_link = []
     file_unweight_link = []
     file_location_diff_plot = []
-    labelencoder = LabelEncoder()
 
     df[response] = labelencoder.fit_transform(df[response])
     for i in cont_pred:
@@ -252,7 +253,7 @@ def main():
             df[cont_cont[0]],
             df[cont_cont[1]],
             df[response],
-            5,
+            10,
             cont_cont[0],
             cont_cont[1],
         )
