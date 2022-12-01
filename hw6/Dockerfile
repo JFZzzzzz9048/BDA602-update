@@ -1,8 +1,6 @@
 FROM python:3.10.6
 
-ENV APP_HOME /app
-WORKDIR $APP_HOME
-ENV PYTHONPATH /
+WORKDIR /hw6
 
 # Get necessary system packages
 RUN apt-get update \
@@ -14,14 +12,10 @@ RUN apt-get update \
     mariadb-client \
   && rm -rf /var/lib/apt/lists/*
 
-# Get necessary python libraries
-COPY requirements.txt .
-RUN pip3 install --compile --no-cache-dir -r requirements.txt
-
 # Copy over code
-COPY baseball.sql .
-COPY script.sh .
+COPY /hw2.sql .
+COPY /script.sh .
 
 
 # Run app
-CMD script.sh
+CMD /script.sh

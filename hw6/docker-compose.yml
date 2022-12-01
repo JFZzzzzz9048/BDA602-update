@@ -10,7 +10,8 @@ services:
       - MYSQL_ROOT_PASSWORD=password
       - TZ=Europe/London
     volumes:
-      - path_to_data:/config
+      - ./.db:/config
+      - ./baseball.sql:/docker-entrypoint-initdb.d/baseball.sql
     restart: unless-stopped
 
   baseball:
