@@ -11,7 +11,6 @@ services:
       - TZ=Europe/London
     volumes:
       - ./.db:/config
-      - ./baseball.sql:/docker-entrypoint-initdb.d/baseball.sql
     restart: unless-stopped
 
   baseball:
@@ -21,4 +20,4 @@ services:
     image: baseball
     restart: unless-stopped
     volumes:
-      - "./stuff:/app/stuff"
+      - ./baseball.sql:/hw6/baseball.sql

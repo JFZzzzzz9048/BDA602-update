@@ -1,5 +1,6 @@
 FROM python:3.10.6
 
+# workdir is remote
 WORKDIR /hw6
 
 # Get necessary system packages
@@ -13,9 +14,11 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 # Copy over code
-COPY /hw2.sql .
-COPY /script.sh .
+COPY hw2.sql /hw6/hw2.sql
+COPY script.sh /hw6/script.sh
 
 
 # Run app
-CMD /script.sh
+# /bin/sh running permission
+# /hw6/script.sh remote
+CMD /bin/sh /hw6/script.sh

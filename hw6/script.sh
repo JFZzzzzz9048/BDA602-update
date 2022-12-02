@@ -1,3 +1,11 @@
-mysql -h mariadb -uroot -ppassword --protocol=TCP -e "USE baseball"
+if ! mariadb -h mariadb -u root -ppassword -e "USE baseball;"
 
-mysql -h mariadb -u root -ppassword --protocol=TCP baseball < hw2.sql
+then
+
+mariadb -h mariadb -u root -ppassword -e "CREATE DATABASE baseball;"
+
+mariadb -h mariadb -u root -ppassword baseball < /hw6/baseball.sql
+
+fi
+
+mariadb -h mariadb -u root -ppassword baseball < /hw6/hw2.sql > /hw6/output.txt
