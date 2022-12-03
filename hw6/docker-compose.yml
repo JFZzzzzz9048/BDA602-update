@@ -23,3 +23,6 @@ services:
     volumes:
       - ./baseball.sql:/baseball.sql
       - ./results:/results
+
+volumes:
+  db:
