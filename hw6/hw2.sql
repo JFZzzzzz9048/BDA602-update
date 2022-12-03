@@ -1,6 +1,7 @@
 -- create a temporary table batter_info only keep useful fields: batter_id, atbat, hit, game_id, date
 CREATE TABLE IF NOT EXISTS BATTER_INFO AS
-	SELECT BC.batter AS Batter_ID, BC.atBat AS atBat, BC.Hit AS Hit, G.game_ID AS game_ID, date(G.local_date) AS Game_Date
+	SELECT BC.batter AS Batter_ID, BC.atBat AS atBat, BC.Hit AS Hit, G.game_ID AS game_ID,
+	       date(G.local_date) AS Game_Date
 	FROM batter_counts BC
 	JOIN game G
 	ON G.game_id = BC.game_id
@@ -8,7 +9,8 @@ CREATE TABLE IF NOT EXISTS BATTER_INFO AS
 
 -- create a TEMPORARY table with all info(batter_id, game_date, atBat, Hit, 100_days_prior) needed in calculating ROLLING batting average
 CREATE TABLE IF NOT EXISTS ROLLING_BATTING_AVG_INFO AS
-SELECT Batter_ID, Game_ID, DATE(Game_Date) as Game_Date, SUM(atBat) AS atBat, SUM(Hit) AS Hit, DATE_SUB(DATE(Game_Date), INTERVAL 100 DAY) AS 100_days_prior
+SELECT Batter_ID, Game_ID, DATE(Game_Date) as Game_Date, SUM(atBat) AS atBat, SUM(Hit) AS Hit, DATE_SUB(DATE(Game_Date),
+    INTERVAL 100 DAY) AS 100_days_prior
 FROM BATTER_INFO
 WHERE atBat > 0
 GROUP BY Batter_ID, DATE(Game_Date);

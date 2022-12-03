@@ -17,10 +17,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: baseball
     image: mariadb
     restart: unless-stopped
     volumes:
-      - ./baseball.sql:/hw6/baseball.sql
-      - ./script.sh:/hw6/script.sql
-      - ./hw2.sql:/hw6/hw2/sql
-      - ./results:/hw6/results
+      - ./baseball.sql:/baseball.sql
+      - ./results:/results
