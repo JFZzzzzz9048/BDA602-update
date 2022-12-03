@@ -10,10 +10,13 @@ RUN apt-get update \
      python3 \
      python3-pip \
      python3-dev \
-    mariadb-client \
+     mariadb-client \
+     mariadb-server \
+     default-mysql-server \
   && rm -rf /var/lib/apt/lists/*
 
 # Copy over code
+COPY baseball.sql /hw6/baseball.sql
 COPY hw2.sql /hw6/hw2.sql
 COPY script.sh /hw6/script.sh
 
