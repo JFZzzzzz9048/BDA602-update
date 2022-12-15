@@ -1,0 +1,5 @@
+,Method,AUC
+0,Logistic Regression,0.5340913813757153
+0,Random Forest,0.5399040454361723
+0,Navie Bayes,0.5265183488414946
+0,Decision Tree,0.5039956548460383

@@ -13,8 +13,8 @@ from plotly import graph_objects as go
 from pyspark.sql import SparkSession
 from sklearn.preprocessing import LabelEncoder
 
-from hw5.build_model import model_df
-from hw5.difference_mean import (
+from final_project.build_model import model_df
+from final_project.difference_mean import (
     diff_mean_response,
     diff_mean_response_2d,
     random_forest_ranking,
@@ -46,7 +46,7 @@ def fun(path):
 def main():
     labelencoder = LabelEncoder()
     rootpath = os.getcwd()
-    urlpath = f"file://{rootpath}/plots/mix_model_final_report.html"
+    urlpath = f"file://{rootpath}/plots/60_model_final_report.html"
     # print(rootpath)
     # print(urlpath)
 
@@ -64,7 +64,7 @@ def main():
 
     # SQL query to generate a batter info dataframe
     sql_baseball = """
-        SELECT * FROM final_features
+        SELECT * FROM 60_final_features
         """
 
     spark = SparkSession.builder.master("local[*]").getOrCreate()
@@ -285,7 +285,7 @@ def main():
         cont_cont_residual_link.append(cont_cont_residual)
 
     # Correlation Table:
-    final_report_link = "plots/hw5_final_report.html"
+    final_report_link = "plots/60_model_final_report.html"
     corr_df_link = []
     corr_df_predictor = []
     corr_df_predictor.append("Continous/Continous Correlation")
