@@ -6,11 +6,11 @@ from itertools import combinations, product
 import data_process
 import pandas as pd
 import plots
-
-# import sqlalchemy
+import sqlalchemy
 from cat_correlation import con_con_correlation
 from plotly import graph_objects as go
-from pyspark.sql import SparkSession
+
+# from pyspark.sql import SparkSession
 from sklearn.preprocessing import LabelEncoder
 
 from final_project.build_model import model_df
@@ -47,12 +47,13 @@ def main():
     labelencoder = LabelEncoder()
     rootpath = os.getcwd()
     urlpath = f"file://{rootpath}/plots/60_model_final_report.html"
-    # print(rootpath)
-    # print(urlpath)
+    # urlpath = f"file://{rootpath}/plots/100_model_final_report.html"
+    # urlpath = f"file://{rootpath}/plots/mixed_model_final_report.html"
 
     cont_pred = []
     cat_pred = []
 
+    '''
     # Setup Spark
     database = "baseball"
     username = "root"
@@ -66,6 +67,15 @@ def main():
     sql_baseball = """
         SELECT * FROM 60_final_features
         """
+
+    sql_baseball = """
+            SELECT * FROM 100_final_features
+            """
+
+    sql_baseball = """
+            SELECT * FROM final_features
+            """
+
 
     spark = SparkSession.builder.master("local[*]").getOrCreate()
     df_sql_baseball = (
@@ -82,17 +92,16 @@ def main():
     '''
     db_user = "root"
     db_pass = "password"  # pragma: allowlist secret
-    db_host = "localhost"
+    db_host = "mariadb:3306"
     db_database = "baseball"
-    connect_string = (
-        f"mariadb+mariadbconnector://{db_user}:{db_pass}@{db_host}/{db_database}"
-    )
+    connect = f"mariadb+mariadbconnector://{db_user}:{db_pass}@{db_host}/{db_database}"
 
-    sql_engine = sqlalchemy.create_engine(connect_string)
-
-    query = """SELECT * FROM final_features"""
+    sql_engine = sqlalchemy.create_engine(connect)
+    query = """SELECT * FROM 60_final_features"""
+    # query = """SELECT * FROM 100_final_features"""
+    # query = """SELECT * FROM final_features"""
     df_sql_baseball = pd.read_sql_query(query, sql_engine)
-    '''
+
     df_baseball = df_sql_baseball.toPandas()
     df_baseball.to_csv("final_data_before.csv")
     df_NA_percentage = df_baseball.isnull().mean() * 100
@@ -108,16 +117,6 @@ def main():
     predictors = list(df_baseball_1.columns)
     predictors.remove(response)
     print(df_baseball_1.dtypes)
-
-    """
-    df_baseball_1 = df_baseball.drop(
-        ["Game_ID", "home_team_id", "away_team_id", "Game_Date"], axis=1
-    )
-
-    df_baseball_1 = df_baseball.drop(
-        ["Game_ID", "home_team_id", "away_team_id", "game_date"], axis=1
-    )
-    """
 
     # Build Model Performance Table
     X = df_baseball_1.drop([response], axis=1)
@@ -286,6 +285,8 @@ def main():
 
     # Correlation Table:
     final_report_link = "plots/60_model_final_report.html"
+    # final_report_link = "plots/100_model_final_report.html"
+    # final_report_link = "plots/mixed_model_final_report.html"
     corr_df_link = []
     corr_df_predictor = []
     corr_df_predictor.append("Continous/Continous Correlation")

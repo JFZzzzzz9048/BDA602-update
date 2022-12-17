@@ -1,6 +1,4 @@
 # build a function to clean dataframe
-
-
 def clean_df1(dataframe):
     for i in dataframe.columns:
         if dataframe[i].dtype == "category" or dataframe[i].dtype == "object":

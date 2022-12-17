@@ -1,17 +1,9 @@
 # import numpy as np
+import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn import metrics
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
-
-"""
-from sklearn.metrics import (
-    RocCurveDisplay,
-    accuracy_score,
-    mean_squared_error,
-    r2_score,
-)
-"""
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
@@ -32,11 +24,10 @@ def model_df(X, y):
     fpr_lr, tpr_lr, thresholds_lr = metrics.roc_curve(
         y_test, y_lr_test_pred, pos_label=1
     )
-    print("AUC for Logistic Regression: {}".format(metrics.auc(fpr_lr, tpr_lr)))
+    auc_lr = round(metrics.roc_auc_score(y_test, y_lr_test_pred), 4)
+    print("AUC for Logistic Regression: {}".format(auc_lr))
 
-    lr_results = pd.DataFrame(
-        ["Logistic Regression", metrics.auc(fpr_lr, tpr_lr)]
-    ).transpose()
+    lr_results = pd.DataFrame(["Logistic Regression", auc_lr]).transpose()
     lr_results.columns = [
         "Method",
         "AUC",
@@ -51,11 +42,10 @@ def model_df(X, y):
     fpr_rf, tpr_rf, thresholds_rf = metrics.roc_curve(
         y_test, y_rf_test_pred, pos_label=1
     )
-    print("AUC for Random Forest: {}".format(metrics.auc(fpr_rf, tpr_rf)))
+    auc_rf = round(metrics.roc_auc_score(y_test, y_rf_test_pred), 4)
+    print("AUC for Random Forest: {}".format(auc_rf))
 
-    rf_results = pd.DataFrame(
-        ["Random Forest", metrics.auc(fpr_rf, tpr_rf)]
-    ).transpose()
+    rf_results = pd.DataFrame(["Random Forest", auc_rf]).transpose()
     rf_results.columns = [
         "Method",
         "AUC",
@@ -70,9 +60,10 @@ def model_df(X, y):
     fpr_nb, tpr_nb, thresholds_nb = metrics.roc_curve(
         y_test, y_nb_test_pred, pos_label=1
     )
-    print("AUC for Navie Bayes: {}".format(metrics.auc(fpr_nb, tpr_nb)))
+    auc_nb = round(metrics.roc_auc_score(y_test, y_nb_test_pred), 4)
+    print("AUC for Navie Bayes: {}".format(auc_nb))
 
-    nb_results = pd.DataFrame(["Navie Bayes", metrics.auc(fpr_nb, tpr_nb)]).transpose()
+    nb_results = pd.DataFrame(["Navie Bayes", auc_nb]).transpose()
     nb_results.columns = [
         "Method",
         "AUC",
@@ -90,14 +81,11 @@ def model_df(X, y):
     fpr_clf, tpr_clf, thresholds_clf = metrics.roc_curve(
         y_test, y_clf_pred, pos_label=1
     )
+    auc_clf = round(metrics.roc_auc_score(y_test, y_clf_pred), 4)
 
-    print(
-        "AUC for Decision Tree: {}".format(metrics.accuracy_score(y_test, y_clf_pred))
-    )
+    print("AUC for Decision Tree: {}".format(auc_clf))
 
-    clf_results = pd.DataFrame(
-        ["Decision Tree", metrics.auc(fpr_clf, tpr_clf)]
-    ).transpose()
+    clf_results = pd.DataFrame(["Decision Tree", auc_clf]).transpose()
     clf_results.columns = [
         "Method",
         "AUC",
@@ -105,5 +93,16 @@ def model_df(X, y):
 
     ml_df = pd.concat([lr_results, rf_results, nb_results, clf_results])
     ml_df.to_csv("model_score.csv")
+
+    plt.figure(0).clf()
+    plt.plot(fpr_lr, tpr_lr, label="Logistic Regression, AUC=" + str(auc_lr))
+    plt.plot(fpr_rf, tpr_rf, label="Random Forest, AUC=" + str(auc_rf))
+    plt.plot(fpr_nb, tpr_nb, label="Naive Bayes, AUC=" + str(auc_nb))
+    plt.plot(fpr_clf, tpr_clf, label="Decision Tree, AUC=" + str(auc_clf))
+
+    plt.title("ROC Curves")
+    # add legend
+    plt.legend()
+    plt.savefig("ROC.pdf")
 
     return ml_df
