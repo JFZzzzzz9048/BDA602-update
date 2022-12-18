@@ -75,8 +75,6 @@ def main():
     sql_baseball = """
             SELECT * FROM final_features
             """
-
-
     spark = SparkSession.builder.master("local[*]").getOrCreate()
     df_sql_baseball = (
         spark.read.format("jdbc")
@@ -92,17 +90,16 @@ def main():
     '''
     db_user = "root"
     db_pass = "password"  # pragma: allowlist secret
-    db_host = "mariadb:3306"
+    db_host = "localhost"
     db_database = "baseball"
-    connect = f"mariadb+mariadbconnector://{db_user}:{db_pass}@{db_host}/{db_database}"
+    connect = f"mysql+pymysql://{db_user}:{db_pass}@{db_host}/{db_database}"
 
     sql_engine = sqlalchemy.create_engine(connect)
     query = """SELECT * FROM 60_final_features"""
     # query = """SELECT * FROM 100_final_features"""
     # query = """SELECT * FROM final_features"""
-    df_sql_baseball = pd.read_sql_query(query, sql_engine)
+    df_baseball = pd.read_sql_query(query, sql_engine)
 
-    df_baseball = df_sql_baseball.toPandas()
     df_baseball.to_csv("final_data_before.csv")
     df_NA_percentage = df_baseball.isnull().mean() * 100
     df_NA_percentage.to_csv("NA_percentage.csv")

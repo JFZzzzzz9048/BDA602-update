@@ -7,3 +7,10 @@ matplotlib
 scipy
 plotly
 statsmodels
+pyspark
+mariadb
+jinja2
+pyspark-stubs
+scikit-learn
+sqlalchemy
+PyMySQL
