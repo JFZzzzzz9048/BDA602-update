@@ -18,7 +18,7 @@ joblib==1.2.0
     # via scikit-learn
 kiwisolver==1.4.4
     # via matplotlib
-mariadb==1.1.5.post3
+mariadb==1.0.8
     # via -r requirements.in
 markupsafe==2.1.1
     # via jinja2
